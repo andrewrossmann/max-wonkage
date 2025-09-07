@@ -31,14 +31,14 @@ export default function DashboardPage() {
     
     try {
       // Ensure user profile exists first
-      const profile = await getUserProfile(user.id)
+      const profile = await getUserProfile(user.id, user.email)
       if (!profile) {
         // If profile creation failed, try with email
         await createUserProfile(user.id, user.email)
       }
       
       // Then fetch curricula
-      const userCurricula = await getUserCurricula(user.id)
+      const userCurricula = await getUserCurricula(user.id, user.email)
       setCurricula(userCurricula)
     } catch (error) {
       console.error('Error loading user data:', error)

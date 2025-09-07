@@ -51,7 +51,7 @@ export interface LearningSession {
 }
 
 // User Profile Functions
-export async function getUserProfile(userId: string): Promise<UserProfile | null> {
+export async function getUserProfile(userId: string, email?: string): Promise<UserProfile | null> {
   const { data, error } = await supabase
     .from('user_profiles')
     .select('*')
@@ -70,7 +70,7 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
     // If profile doesn't exist, create it
     if (error.code === 'PGRST116' || error.message?.includes('No rows found')) {
       console.log('Profile not found, creating new profile for user:', userId)
-      return await createUserProfile(userId)
+      return await createUserProfile(userId, email)
     }
     return null
   }
@@ -119,9 +119,9 @@ export async function updateUserProfile(userId: string, updates: Partial<UserPro
 }
 
 // Curriculum Functions
-export async function getUserCurricula(userId: string): Promise<Curriculum[]> {
+export async function getUserCurricula(userId: string, email?: string): Promise<Curriculum[]> {
   // First ensure user profile exists
-  await getUserProfile(userId)
+  await getUserProfile(userId, email)
   
   const { data, error } = await supabase
     .from('curricula')
