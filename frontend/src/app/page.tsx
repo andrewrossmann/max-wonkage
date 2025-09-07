@@ -57,6 +57,7 @@ export default function LandingPage() {
               <a href="#how-it-works" className="text-white hover:text-yellow-400 transition-colors font-medium">How it Works</a>
               <a href="#contact" className="text-white hover:text-yellow-400 transition-colors font-medium">Contact</a>
               <motion.button
+                onClick={() => window.location.href = '/login'}
                 className="px-6 py-2 bg-yellow-400 text-black rounded-lg hover:bg-yellow-300 transition-all duration-200 font-semibold shadow-lg"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -87,7 +88,10 @@ export default function LandingPage() {
                 <a href="#features" className="text-white hover:text-yellow-400 transition-colors font-medium">Features</a>
                 <a href="#how-it-works" className="text-white hover:text-yellow-400 transition-colors font-medium">How it Works</a>
                 <a href="#contact" className="text-white hover:text-yellow-400 transition-colors font-medium">Contact</a>
-                <button className="px-6 py-2 bg-yellow-400 text-black rounded-lg hover:bg-yellow-300 transition-all duration-200 font-semibold shadow-lg">
+                <button 
+                  onClick={() => window.location.href = '/login'}
+                  className="px-6 py-2 bg-yellow-400 text-black rounded-lg hover:bg-yellow-300 transition-all duration-200 font-semibold shadow-lg"
+                >
                   Log In
                 </button>
               </div>
