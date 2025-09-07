@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/contexts/AuthContext'
 import Logo from '@/components/Logo'
@@ -9,17 +9,39 @@ import Logo from '@/components/Logo'
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [firstName, setFirstName] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [isSignUp, setIsSignUp] = useState(false)
   
   const { signIn, signUp } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    // Check if user came from landing page wanting to sign up
+    if (searchParams.get('signup') === 'true') {
+      setIsSignUp(true)
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
+
+    // Basic validation
+    if (isSignUp && !firstName.trim()) {
+      setError('First name is required')
+      setLoading(false)
+      return
+    }
+    
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long')
+      setLoading(false)
+      return
+    }
 
     try {
       if (isSignUp) {
@@ -33,7 +55,7 @@ export default function LoginPage() {
         }
         
         // If sign in failed, try to create new account
-        const { error: signUpError } = await signUp(email, password)
+        const { error: signUpError } = await signUp(email, password, firstName)
         
         if (signUpError) {
           // If sign up fails because user already exists, try to sign in
@@ -114,6 +136,25 @@ export default function LoginPage() {
                 placeholder="Enter your email"
               />
             </div>
+            
+            {isSignUp && (
+              <div>
+                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
+                  First name
+                </label>
+                <input
+                  id="firstName"
+                  name="firstName"
+                  type="text"
+                  autoComplete="given-name"
+                  required={isSignUp}
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-yellow-500 focus:border-yellow-500"
+                  placeholder="Enter your first name"
+                />
+              </div>
+            )}
             
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">

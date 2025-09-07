@@ -3,6 +3,7 @@ import { supabase } from './supabase'
 export interface UserProfile {
   id: string
   email: string
+  first_name?: string
   full_name?: string
   created_at: string
   updated_at: string
@@ -51,7 +52,7 @@ export interface LearningSession {
 }
 
 // User Profile Functions
-export async function getUserProfile(userId: string, email?: string): Promise<UserProfile | null> {
+export async function getUserProfile(userId: string, email?: string, firstName?: string): Promise<UserProfile | null> {
   const { data, error } = await supabase
     .from('user_profiles')
     .select('*')
@@ -70,7 +71,7 @@ export async function getUserProfile(userId: string, email?: string): Promise<Us
     // If profile doesn't exist, create it
     if (error.code === 'PGRST116' || error.message?.includes('No rows found')) {
       console.log('Profile not found, creating new profile for user:', userId)
-      return await createUserProfile(userId, email)
+      return await createUserProfile(userId, email, firstName)
     }
     return null
   }
@@ -78,12 +79,12 @@ export async function getUserProfile(userId: string, email?: string): Promise<Us
   return data
 }
 
-export async function createUserProfile(userId: string, email?: string): Promise<UserProfile | null> {
-  console.log('Creating user profile for:', userId, 'with email:', email)
+export async function createUserProfile(userId: string, email?: string, firstName?: string): Promise<UserProfile | null> {
+  console.log('Creating user profile for:', userId, 'with email:', email, 'and first name:', firstName)
   
   const { data, error } = await supabase
     .from('user_profiles')
-    .insert([{ id: userId, email }])
+    .insert([{ id: userId, email, first_name: firstName }])
     .select()
     .single()
 
@@ -119,9 +120,9 @@ export async function updateUserProfile(userId: string, updates: Partial<UserPro
 }
 
 // Curriculum Functions
-export async function getUserCurricula(userId: string, email?: string): Promise<Curriculum[]> {
+export async function getUserCurricula(userId: string, email?: string, firstName?: string): Promise<Curriculum[]> {
   // First ensure user profile exists
-  await getUserProfile(userId, email)
+  await getUserProfile(userId, email, firstName)
   
   const { data, error } = await supabase
     .from('curricula')

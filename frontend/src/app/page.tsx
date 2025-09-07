@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   ArrowRight, 
   Play, 
@@ -22,6 +24,8 @@ export default function LandingPage() {
   const [isScrolled, setIsScrolled] = useState(false);
   const { scrollY } = useScroll();
   const y = useTransform(scrollY, [0, 300], [0, -50]);
+  const router = useRouter();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -30,6 +34,25 @@ export default function LandingPage() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Redirect signed-in users to dashboard
+  useEffect(() => {
+    if (!loading && user) {
+      router.push('/dashboard');
+    }
+  }, [user, loading, router]);
+
+  // Show loading state while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -57,7 +80,7 @@ export default function LandingPage() {
               <a href="#how-it-works" className="text-white hover:text-yellow-400 transition-colors font-medium">How it Works</a>
               <a href="#contact" className="text-white hover:text-yellow-400 transition-colors font-medium">Contact</a>
               <motion.button
-                onClick={() => window.location.href = '/login'}
+                onClick={() => router.push('/login')}
                 className="px-6 py-2 bg-yellow-400 text-black rounded-lg hover:bg-yellow-300 transition-all duration-200 font-semibold shadow-lg"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -89,7 +112,7 @@ export default function LandingPage() {
                 <a href="#how-it-works" className="text-white hover:text-yellow-400 transition-colors font-medium">How it Works</a>
                 <a href="#contact" className="text-white hover:text-yellow-400 transition-colors font-medium">Contact</a>
                 <button 
-                  onClick={() => window.location.href = '/login'}
+                  onClick={() => router.push('/login')}
                   className="px-6 py-2 bg-yellow-400 text-black rounded-lg hover:bg-yellow-300 transition-all duration-200 font-semibold shadow-lg"
                 >
                   Log In
@@ -150,6 +173,7 @@ export default function LandingPage() {
               transition={{ duration: 0.8, delay: 0.4 }}
             >
               <motion.button
+                onClick={() => router.push('/login?signup=true')}
                 className="group px-8 py-4 bg-yellow-500 text-black rounded-xl font-semibold text-lg shadow-2xl hover:shadow-3xl transition-all duration-300 flex items-center space-x-2 backdrop-blur-sm"
                 whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95 }}
@@ -159,6 +183,13 @@ export default function LandingPage() {
               </motion.button>
 
               <motion.button
+                onClick={() => {
+                  // Scroll to the "How It Works" section
+                  const howItWorksSection = document.getElementById('how-it-works');
+                  if (howItWorksSection) {
+                    howItWorksSection.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
                 className="group px-8 py-4 bg-black bg-opacity-30 backdrop-blur-md text-white border-2 border-white border-opacity-70 rounded-xl font-semibold text-lg shadow-2xl hover:shadow-3xl hover:bg-opacity-50 hover:border-opacity-90 transition-all duration-300 flex items-center space-x-2"
                 whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95 }}
@@ -435,6 +466,7 @@ export default function LandingPage() {
             transition={{ duration: 0.8, delay: 0.2 }}
           >
             <motion.button
+              onClick={() => router.push('/login?signup=true')}
               className="px-8 py-4 bg-black text-yellow-500 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-300 flex items-center space-x-2"
               whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
@@ -443,6 +475,13 @@ export default function LandingPage() {
               <ArrowRight className="w-5 h-5" />
             </motion.button>
             <motion.button
+              onClick={() => {
+                // Scroll to the "How It Works" section
+                const howItWorksSection = document.getElementById('how-it-works');
+                if (howItWorksSection) {
+                  howItWorksSection.scrollIntoView({ behavior: 'smooth' });
+                }
+              }}
               className="px-8 py-4 bg-transparent text-black border-2 border-black rounded-xl font-semibold text-lg hover:bg-black hover:text-yellow-500 transition-all duration-300"
               whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
