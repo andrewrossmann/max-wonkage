@@ -22,15 +22,40 @@ export default function LoginPage() {
     setError('')
 
     try {
-      const { error } = isSignUp 
-        ? await signUp(email, password)
-        : await signIn(email, password)
-
-      if (error) {
-        setError(error.message)
-      } else {
-        if (isSignUp) {
+      if (isSignUp) {
+        // For sign up, first try to sign in to see if account exists
+        const { error: signInError } = await signIn(email, password)
+        
+        if (!signInError) {
+          // Account exists and password is correct, sign them in
+          router.push('/dashboard')
+          return
+        }
+        
+        // If sign in failed, try to create new account
+        const { error: signUpError } = await signUp(email, password)
+        
+        if (signUpError) {
+          // If sign up fails because user already exists, try to sign in
+          if (signUpError.message?.includes('already registered') || signUpError.message?.includes('already exists')) {
+            const { error: retrySignInError } = await signIn(email, password)
+            if (retrySignInError) {
+              setError('Account exists but password is incorrect. Please try signing in instead.')
+            } else {
+              router.push('/dashboard')
+            }
+          } else {
+            setError(signUpError.message)
+          }
+        } else {
           setError('Check your email for a confirmation link!')
+        }
+      } else {
+        // For sign in, just try to sign in
+        const { error } = await signIn(email, password)
+        
+        if (error) {
+          setError(error.message)
         } else {
           router.push('/dashboard')
         }
