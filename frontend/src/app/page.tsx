@@ -75,10 +75,10 @@ export default function LandingPage() {
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-8">
-              <a href="#about" className="text-white hover:text-yellow-400 transition-colors font-medium">About</a>
-              <a href="#features" className="text-white hover:text-yellow-400 transition-colors font-medium">Features</a>
-              <a href="#how-it-works" className="text-white hover:text-yellow-400 transition-colors font-medium">How it Works</a>
-              <a href="#contact" className="text-white hover:text-yellow-400 transition-colors font-medium">Contact</a>
+              <a href="#about" className={`${isScrolled ? 'text-gray-800' : 'text-white'} hover:text-yellow-400 transition-colors font-medium`}>About</a>
+              <a href="#features" className={`${isScrolled ? 'text-gray-800' : 'text-white'} hover:text-yellow-400 transition-colors font-medium`}>Features</a>
+              <a href="#how-it-works" className={`${isScrolled ? 'text-gray-800' : 'text-white'} hover:text-yellow-400 transition-colors font-medium`}>How it Works</a>
+              <a href="#contact" className={`${isScrolled ? 'text-gray-800' : 'text-white'} hover:text-yellow-400 transition-colors font-medium`}>Contact</a>
               <motion.button
                 onClick={() => router.push('/login')}
                 className="px-6 py-2 bg-yellow-400 text-black rounded-lg hover:bg-yellow-300 transition-all duration-200 font-semibold shadow-lg"
@@ -91,7 +91,7 @@ export default function LandingPage() {
 
             {/* Mobile Menu Button */}
             <button
-              className="md:hidden p-2"
+              className={`md:hidden p-2 ${isScrolled ? 'text-gray-800' : 'text-white'}`}
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -107,10 +107,10 @@ export default function LandingPage() {
               exit={{ opacity: 0, height: 0 }}
             >
               <div className="flex flex-col space-y-4">
-                <a href="#about" className="text-white hover:text-yellow-400 transition-colors font-medium">About</a>
-                <a href="#features" className="text-white hover:text-yellow-400 transition-colors font-medium">Features</a>
-                <a href="#how-it-works" className="text-white hover:text-yellow-400 transition-colors font-medium">How it Works</a>
-                <a href="#contact" className="text-white hover:text-yellow-400 transition-colors font-medium">Contact</a>
+                <a href="#about" className={`${isScrolled ? 'text-gray-800' : 'text-white'} hover:text-yellow-400 transition-colors font-medium`}>About</a>
+                <a href="#features" className={`${isScrolled ? 'text-gray-800' : 'text-white'} hover:text-yellow-400 transition-colors font-medium`}>Features</a>
+                <a href="#how-it-works" className={`${isScrolled ? 'text-gray-800' : 'text-white'} hover:text-yellow-400 transition-colors font-medium`}>How it Works</a>
+                <a href="#contact" className={`${isScrolled ? 'text-gray-800' : 'text-white'} hover:text-yellow-400 transition-colors font-medium`}>Contact</a>
                 <button 
                   onClick={() => router.push('/login')}
                   className="px-6 py-2 bg-yellow-400 text-black rounded-lg hover:bg-yellow-300 transition-all duration-200 font-semibold shadow-lg"
@@ -140,19 +140,18 @@ export default function LandingPage() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10">
           <div className="text-center">
             <motion.h1 
-              className="text-5xl md:text-7xl font-bold text-white mb-6 drop-shadow-2xl"
+              className="text-4xl md:text-6xl font-bold text-white mb-6 drop-shadow-2xl"
               initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
             >
-              Transform Your{' '}
+              The easiest, fastest, and most direct way to{' '}
               <span className="text-yellow-400 drop-shadow-2xl">
-                Downtime
+              learn a new skill or subject
               </span>
               <br />
-              Into{' '}
               <span className="text-white drop-shadow-2xl">
-                Learning Time
+                
               </span>
             </motion.h1>
 
@@ -162,8 +161,8 @@ export default function LandingPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
             >
-              AI-powered personalized curricula optimized for your available time and learning goals. 
-              Perfect for recovery periods, career transitions, or any unexpected free time.
+              AI-powered one to one unique curricula optimized for your goals, your busy schedule, and for you...<span className="italic">personally</span>
+              
             </motion.p>
 
             <motion.div 

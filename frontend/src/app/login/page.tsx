@@ -13,8 +13,9 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [isSignUp, setIsSignUp] = useState(false)
+  const [confirmationSent, setConfirmationSent] = useState(false)
   
-  const { signIn, signUp } = useAuth()
+  const { signIn, signUp, resendConfirmation } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -71,6 +72,7 @@ export default function LoginPage() {
           }
         } else {
           setError('Check your email for a confirmation link!')
+          setConfirmationSent(true)
         }
       } else {
         // For sign in, just try to sign in
@@ -81,6 +83,24 @@ export default function LoginPage() {
         } else {
           router.push('/dashboard')
         }
+      }
+    } catch (err) {
+      setError('An unexpected error occurred')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleResendConfirmation = async () => {
+    setLoading(true)
+    setError('')
+    
+    try {
+      const { error } = await resendConfirmation(email)
+      if (error) {
+        setError(error.message)
+      } else {
+        setError('Confirmation email sent! Please check your inbox.')
       }
     } catch (err) {
       setError('An unexpected error occurred')
@@ -120,23 +140,6 @@ export default function LoginPage() {
           onSubmit={handleSubmit}
         >
           <div className="space-y-4">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-yellow-500 focus:border-yellow-500"
-                placeholder="Enter your email"
-              />
-            </div>
-            
             {isSignUp && (
               <div>
                 <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
@@ -155,6 +158,23 @@ export default function LoginPage() {
                 />
               </div>
             )}
+            
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                Email address
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-yellow-500 focus:border-yellow-500"
+                placeholder="Enter your email"
+              />
+            </div>
             
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
@@ -185,29 +205,44 @@ export default function LoginPage() {
           )}
 
           <div>
-            <motion.button
-              type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-black bg-yellow-400 hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              {loading ? 'Loading...' : (isSignUp ? 'Create Account' : 'Sign In')}
-            </motion.button>
+            {isSignUp && confirmationSent ? (
+              <motion.button
+                type="button"
+                onClick={handleResendConfirmation}
+                disabled={loading}
+                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-black bg-yellow-400 hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                {loading ? 'Sending...' : 'Resend Confirmation Email'}
+              </motion.button>
+            ) : (
+              <motion.button
+                type="submit"
+                disabled={loading}
+                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-black bg-yellow-400 hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                {loading ? 'Loading...' : (isSignUp ? 'Create Account' : 'Sign In')}
+              </motion.button>
+            )}
           </div>
 
-          <div className="text-center">
-            <button
-              type="button"
-              onClick={() => setIsSignUp(!isSignUp)}
-              className="text-sm text-gray-600 hover:text-yellow-600 transition-colors"
-            >
-              {isSignUp 
-                ? 'Already have an account? Sign in' 
-                : "Don't have an account? Sign up"
-              }
-            </button>
-          </div>
+          {!confirmationSent && (
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => setIsSignUp(!isSignUp)}
+                className="text-sm text-gray-600 hover:text-yellow-600 transition-colors"
+              >
+                {isSignUp 
+                  ? 'Already have an account? Sign in' 
+                  : "Don't have an account? Sign up"
+                }
+              </button>
+            </div>
+          )}
         </motion.form>
       </div>
     </div>

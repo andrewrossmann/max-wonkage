@@ -22,14 +22,14 @@ export default function Logo({ showText = true, size = 32, className = "" }: Log
     >
       <Image
         src="/logoface.png"
-        alt="Curricoolio Logo"
+        alt="Max Wonkage Logo"
         width={size}
         height={size}
         className="object-contain"
       />
       {showText && (
         <span className="text-2xl font-bold text-yellow-400">
-          CurriCoolio
+          Max Wonkage
         </span>
       )}
     </motion.div>

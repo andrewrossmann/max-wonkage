@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CurriCoolio - Transform Your Downtime Into Learning Time",
+  title: "Max Wonkage - The fastest, most direct, and easiest skill acquisition tool in human history.",
   description: "AI-powered personalized curricula optimized for your available time and learning goals.",
 };
 
