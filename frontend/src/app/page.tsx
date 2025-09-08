@@ -15,7 +15,8 @@ import {
   BookOpen,
   Brain,
   Zap,
-  TrendingUp
+  TrendingUp,
+  User
 } from 'lucide-react';
 import Logo from '@/components/Logo';
 
@@ -338,15 +339,15 @@ export default function LandingPage() {
             {[
               {
                 step: "01",
-                title: "Tell Us About Your Time",
-                description: "How many days do you have? How long per session? We'll optimize everything for your schedule.",
-                icon: <Clock className="w-8 h-8" />
+                title: "Tell Us About Yourself",
+                description: "What subject interests you? How much experience do you already have? What are your goals? Your syllabus will be specifically tailored for you...and you alone!",
+                icon: <User className="w-8 h-8" />
               },
               {
                 step: "02",
-                title: "Choose Your Subject",
-                description: "Any topic you want to learn - from Python to creative writing. No limits on what you can explore and at any skill level or emphasis.",
-                icon: <BookOpen className="w-8 h-8" />
+                title: "Time Availability?",
+                description: "How many days do you have? How long per session? We'll optimize everything for your schedule and construct a calendar with milestones to keep you on track.",
+                icon: <Clock className="w-8 h-8" />
               },
               {
                 step: "03",
@@ -456,7 +457,7 @@ export default function LandingPage() {
             Ready to Start Learning?
           </h2>
           <p className="text-xl text-gray-800 mb-8">
-            Join thousands of learners who are transforming their downtime into productive learning time.
+            Join thousands of learners who are transforming their extra time into productive learning time.
           </p>
           <motion.div 
             className="flex flex-col sm:flex-row gap-4 justify-center items-center"
@@ -500,7 +501,8 @@ export default function LandingPage() {
                 <Logo showText={true} size={40} />
               </div>
               <p className="text-gray-400">
-                Transform your downtime into productive learning time with AI-powered personalized curricula.
+                The easiest, fastest, and smartest way to learn a new skill or subject.
+                <br />Wonk out...to the Max!
               </p>
             </div>
             <div>
