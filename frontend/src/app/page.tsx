@@ -145,7 +145,7 @@ export default function LandingPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
             >
-              The easiest, fastest, and most direct way to{' '}
+              The easiest, fastest, and smartest way to{' '}
               <span className="text-yellow-400 drop-shadow-2xl">
               learn a new skill or subject
               </span>
@@ -161,7 +161,7 @@ export default function LandingPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
             >
-              AI-powered one to one unique curricula optimized for your goals, your busy schedule, and for you...<span className="italic">personally</span>
+              AI-powered custom tailored curricula --- optimized for your unique goals, your busy schedule, and for you...<span className="italic">personally</span>
               
             </motion.p>
 
@@ -529,7 +529,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2025 CurriCoolio. All rights reserved.</p>
+            <p>&copy; 2025 Max Wonkage. All rights reserved.</p>
           </div>
         </div>
       </footer>
