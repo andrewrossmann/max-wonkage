@@ -5,7 +5,7 @@ import { aiCurriculumGenerator } from '@/lib/ai'
 // Initialize Supabase client for server-side operations
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY! // You'll need to add this to your env
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
 export async function POST(request: NextRequest) {
@@ -20,8 +20,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate user exists
-    const { data: user, error: userError } = await supabase.auth.getUser()
+    // Get the authorization header
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { error: 'Missing or invalid authorization header' },
+        { status: 401 }
+      )
+    }
+
+    // Extract the token and validate the user
+    const token = authHeader.split(' ')[1]
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token)
+    
     if (userError || !user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -29,8 +40,29 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Verify the userId matches the authenticated user
+    if (user.id !== userId) {
+      return NextResponse.json(
+        { error: 'User ID mismatch' },
+        { status: 403 }
+      )
+    }
+
+    // Create a new Supabase client with the user's session token for RLS
+    const userSupabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        global: {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      }
+    )
+
     // Get the curriculum
-    const { data: curriculum, error: curriculumError } = await supabase
+    const { data: curriculum, error: curriculumError } = await userSupabase
       .from('curricula')
       .select('*')
       .eq('id', curriculumId)
@@ -55,7 +87,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update curriculum status to approved
-    const { error: updateError } = await supabase
+    const { error: updateError } = await userSupabase
       .from('curricula')
       .update({
         approval_status: 'approved',
@@ -101,7 +133,7 @@ export async function POST(request: NextRequest) {
         const estimatedReadingTime = aiCurriculumGenerator.calculateReadingTime(detailedSession.ai_essay)
 
         // Create session record
-        const { data: sessionRecord, error: sessionError } = await supabase
+        const { data: sessionRecord, error: sessionError } = await userSupabase
           .from('learning_sessions')
           .insert({
             curriculum_id: curriculumId,

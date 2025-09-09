@@ -46,7 +46,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const signUp = async (email: string, password: string, firstName?: string) => {
-    const { error } = await supabase.auth.signUp({
+    console.log('Attempting signup with:', { email, password: '***', firstName })
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -57,6 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Remove custom redirect - let Supabase handle it
       }
     })
+    console.log('Signup result:', { data, error })
     return { error }
   }
 

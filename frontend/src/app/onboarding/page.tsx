@@ -69,7 +69,7 @@ export default function OnboardingPage() {
     }
   })
   
-  const { user } = useAuth()
+  const { user, session } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
   
@@ -88,6 +88,9 @@ export default function OnboardingPage() {
   const currentFieldRef = useRef<string | null>(null)
   const existingContentRef = useRef<string>('')
   const updateGoalsRef = useRef<((goals: string) => void) | null>(null)
+  
+  // Curriculum generation state
+  const [isGenerating, setIsGenerating] = useState(false)
 
   const steps = [
     { id: 1, title: 'Choose Subject', icon: BookOpen },
@@ -342,11 +345,16 @@ export default function OnboardingPage() {
   }
 
   const handleComplete = async () => {
-    if (!user) return
+    console.log('handleComplete called', { user: !!user, session: !!session, userEmail: user?.email })
+    if (!user || !session) {
+      console.log('Missing user or session:', { user: !!user, session: !!session })
+      return
+    }
     
     try {
       if (isEditMode && editingCurriculum) {
         // Update existing curriculum
+        setIsGenerating(true)
         const updatedCurriculum = await updateCurriculum(editingCurriculum.id, {
           title: data.subject.topic,
           subject: data.subject.topic,
@@ -365,6 +373,7 @@ export default function OnboardingPage() {
         }
       } else {
         // Generate AI curriculum
+        setIsGenerating(true)
         const userProfile = {
           name: user.user_metadata?.first_name || 'User',
           background: data.personalBackground.background,
@@ -377,10 +386,12 @@ export default function OnboardingPage() {
         }
 
         // Call AI generation API
+        console.log('Making API call with token:', session.access_token ? 'present' : 'missing')
         const response = await fetch('/api/curriculum/generate', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({
             userProfile,
@@ -401,6 +412,7 @@ export default function OnboardingPage() {
       }
     } catch (error) {
       console.error('Error generating curriculum:', error)
+      setIsGenerating(false)
       // TODO: Show error message to user
     }
   }
@@ -566,6 +578,7 @@ export default function OnboardingPage() {
                 onComplete={handleComplete}
                 onEditStep={setCurrentStep}
                 isEditMode={isEditMode}
+                isGenerating={isGenerating}
               />
             )}
           </motion.div>
@@ -1125,7 +1138,7 @@ function SkillLevelStep({
   )
 }
 
-function ReviewStep({ data, onComplete, onEditStep, isEditMode }: { data: OnboardingData, onComplete: () => void, onEditStep: (step: number) => void, isEditMode: boolean }) {
+function ReviewStep({ data, onComplete, onEditStep, isEditMode, isGenerating }: { data: OnboardingData, onComplete: () => void, onEditStep: (step: number) => void, isEditMode: boolean, isGenerating: boolean }) {
   const [editingSection, setEditingSection] = useState<string | null>(null)
   const [editValues, setEditValues] = useState<{[key: string]: string}>({})
 
@@ -1269,9 +1282,19 @@ function ReviewStep({ data, onComplete, onEditStep, isEditMode }: { data: Onboar
         </button>
         <button
           onClick={onComplete}
-          className="px-8 py-3 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-600 transition-colors"
+          disabled={isGenerating}
+          className="px-8 py-3 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
         >
-          {isEditMode ? 'Update My Curriculum →' : 'Generate My Curriculum →'}
+          {isGenerating ? (
+            <>
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-black"></div>
+              <span>Generating...</span>
+            </>
+          ) : (
+            <>
+              <span>{isEditMode ? 'Update My Curriculum →' : 'Generate My Curriculum →'}</span>
+            </>
+          )}
         </button>
       </div>
     </div>

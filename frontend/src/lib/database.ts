@@ -53,6 +53,8 @@ export interface LearningSession {
 
 // User Profile Functions
 export async function getUserProfile(userId: string, email?: string, firstName?: string): Promise<UserProfile | null> {
+  console.log('Fetching user profile for userId:', userId)
+  
   const { data, error } = await supabase
     .from('user_profiles')
     .select('*')
@@ -76,6 +78,7 @@ export async function getUserProfile(userId: string, email?: string, firstName?:
     return null
   }
 
+  console.log('Successfully fetched user profile:', data)
   return data
 }
 
@@ -96,6 +99,12 @@ export async function createUserProfile(userId: string, email?: string, firstNam
       details: error.details,
       hint: error.hint
     })
+    
+    // If profile already exists (409 conflict), try to fetch it instead
+    if (error.code === '23505' || error.message?.includes('duplicate key') || error.message?.includes('already exists')) {
+      console.log('Profile already exists, fetching instead')
+      return await getUserProfile(userId, email, firstName)
+    }
     return null
   }
 

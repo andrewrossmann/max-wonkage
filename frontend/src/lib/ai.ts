@@ -91,74 +91,44 @@ export class AICurriculumGenerator {
     if (timeAvailability.sessionLength <= 30) contentDensity = 'light'
     else if (timeAvailability.sessionLength >= 75) contentDensity = 'intensive'
     
-    const prompt = `You are an expert curriculum designer specializing in creating highly personalized learning experiences for professionals across all industries and experience levels.
+    const prompt = `Create a personalized ${userProfile.subject} curriculum.
 
-USER PROFILE:
-- Name: ${userProfile.name || 'User'}
-- Background: ${personalBackground.background}
-- Current Role: ${userProfile.currentRole || 'Professional'}
-- Experience Level: ${userProfile.skillLevel}
-- Subject Interest: ${userProfile.subject}
-- Learning Goals: ${userProfile.goals}
-- Personal Interests: ${personalBackground.interests}
-- Relevant Experience: ${personalBackground.experiences}
-- Aspirations: ${personalBackground.goals}
-- Time Availability: ${totalHours.toFixed(1)} hours total
-- Session Preferences: ${timeAvailability.sessionLength} minutes per session
-- Total Sessions: ${totalSessions} sessions
-- Preferred Intensity: ${contentDensity}
+USER: ${userProfile.name || 'User'} - ${userProfile.skillLevel} level
+GOALS: ${userProfile.goals}
+BACKGROUND: ${personalBackground.background}
+SESSIONS: ${totalSessions} sessions of ${timeAvailability.sessionLength} minutes each
+TYPE: ${curriculumType} curriculum
 
-ADAPTIVE TASK:
-Create a personalized ${userProfile.subject} curriculum that perfectly fits the user's constraints and goals.
+RESPOND WITH ONLY VALID JSON - NO OTHER TEXT:
 
-CALCULATION LOGIC:
-- Total Sessions: ${totalSessions} sessions
-- Content Density: ${contentDensity} (based on ${timeAvailability.sessionLength}-minute sessions)
-- Progression Speed: Adjusted for ${userProfile.skillLevel} level with ${totalHours.toFixed(1)} total hours
-
-REQUIREMENTS:
-1. Each session must follow this format but adapt content density:
-   - Session Overview (learning objectives)
-   - Recommended Readings (scale: 2-3 for short sessions, 5-7 for long sessions)
-   - Case Studies/Examples (scale: 1-2 for short sessions, 3-5 for long sessions)
-   - Video Resources (scale: 0-1 for short sessions, 2-3 for long sessions)
-   - Discussion Prompts (scale: 2-3 for short sessions, 5-7 for long sessions)
-   - AI Essay (scale word count based on session length: ${timeAvailability.sessionLength} × 15-20 words per minute)
-
-2. Content must be:
-   - Relevant to ${userProfile.subject} and user's background
-   - Appropriate for ${userProfile.skillLevel} level
-   - Practical and applicable to user's role
-   - Engaging for the user's industry/role
-
-3. Progression must be:
-   - Logical learning sequence
-   - Building complexity appropriately
-   - Connected to learning goals
-   - Respecting time constraints
-
-4. Adapt to curriculum type:
-   - Crash Course (3-5 sessions): Focus on essentials, practical applications
-   - Standard Course (6-15 sessions): Balanced theory and practice
-   - Comprehensive Course (16-30 sessions): Deep theoretical foundation + extensive practice
-   - Mastery Course (30+ sessions): Expert-level content with advanced applications
-
-OUTPUT FORMAT:
-Return a JSON object with:
-- curriculum_overview (title, description, total_sessions, total_estimated_hours, curriculum_type, learning_outcomes, content_density_profile)
-- session_list (array of session objects with appropriate density)
-
-Each session object should have:
-- session_number, title, description, learning_objectives, overview
-- recommended_readings (array with title, description, optional url)
-- case_studies (array with title, description, example)
-- video_resources (array with title, description, optional url, optional duration)
-- discussion_prompts (array of strings)
-- ai_essay (scaled to session length)
-- estimated_reading_time (in minutes)
-- content_density, session_type
-
-Ensure the JSON is valid and complete.`
+{
+  "curriculum_overview": {
+    "title": "Curriculum Title",
+    "description": "Description",
+    "total_sessions": ${totalSessions},
+    "total_estimated_hours": ${totalHours.toFixed(1)},
+    "curriculum_type": "${curriculumType}",
+    "content_density_profile": "${contentDensity}",
+    "learning_objectives": ["objective1", "objective2"],
+    "prerequisites": ["prerequisite1"],
+    "target_audience": "Target audience",
+    "key_topics": ["topic1", "topic2"]
+  },
+  "session_list": [
+    {
+      "session_number": 1,
+      "title": "Session Title",
+      "description": "Session description",
+      "learning_objectives": ["objective1"],
+      "key_concepts": ["concept1"],
+      "activities": ["activity1"],
+      "resources": ["resource1"],
+      "estimated_duration": ${timeAvailability.sessionLength},
+      "difficulty_level": "beginner",
+      "session_type": "overview"
+    }
+  ]
+}`
 
     return prompt
   }
@@ -215,7 +185,7 @@ Return a JSON object with all session components properly structured and scaled.
         messages: [
           {
             role: 'system',
-            content: 'You are an expert curriculum designer. Always respond with valid JSON that matches the exact format specified in the prompt.'
+            content: 'You are an expert curriculum designer. You MUST respond with ONLY valid JSON. Do not include any comments, explanations, or text outside the JSON object. The response must start with { and end with }.'
           },
           {
             role: 'user',
@@ -231,8 +201,21 @@ Return a JSON object with all session components properly structured and scaled.
         throw new Error('No content generated by AI')
       }
 
-      // Parse the JSON response
-      const curriculum = JSON.parse(content) as GeneratedCurriculum
+      // Simple cleaning - just extract JSON from the response
+      let jsonContent = content.trim()
+      
+      // Remove any text before the first { and after the last }
+      const firstBrace = jsonContent.indexOf('{')
+      const lastBrace = jsonContent.lastIndexOf('}')
+      
+      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        jsonContent = jsonContent.substring(firstBrace, lastBrace + 1)
+      }
+      
+      console.log('Extracted JSON content:', jsonContent.substring(0, 200) + '...')
+
+      // Parse the JSON response directly
+      const curriculum = JSON.parse(jsonContent) as GeneratedCurriculum
       
       // Validate the response
       if (!curriculum.curriculum_overview || !curriculum.session_list) {
@@ -255,7 +238,7 @@ Return a JSON object with all session components properly structured and scaled.
         messages: [
           {
             role: 'system',
-            content: 'You are an expert curriculum designer. Always respond with valid JSON that matches the exact format specified in the prompt.'
+            content: 'You are an expert curriculum designer. You MUST respond with ONLY valid JSON. Do not include any comments, explanations, or text outside the JSON object. The response must start with { and end with }.'
           },
           {
             role: 'user',
@@ -303,10 +286,17 @@ Return a JSON object with all session components properly structured and scaled.
       errors.push('Missing or empty session list')
     }
 
+    // Validate curriculum overview
+    if (curriculum.curriculum_overview) {
+      if (!curriculum.curriculum_overview.title) errors.push('Missing curriculum title')
+      if (!curriculum.curriculum_overview.description) errors.push('Missing curriculum description')
+      if (!curriculum.curriculum_overview.total_sessions) errors.push('Missing total sessions')
+    }
+
+    // Validate sessions (simplified validation)
     curriculum.session_list?.forEach((session, index) => {
       if (!session.title) errors.push(`Session ${index + 1}: Missing title`)
-      if (!session.overview) errors.push(`Session ${index + 1}: Missing overview`)
-      if (!session.ai_essay) errors.push(`Session ${index + 1}: Missing AI essay`)
+      if (!session.description) errors.push(`Session ${index + 1}: Missing description`)
       if (!session.learning_objectives || session.learning_objectives.length === 0) {
         errors.push(`Session ${index + 1}: Missing learning objectives`)
       }

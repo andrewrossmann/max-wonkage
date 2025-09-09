@@ -5,11 +5,11 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import Logo from '@/components/Logo'
-import { getUserProfile, createUserProfile, getUserCurricula, Curriculum, archiveCurriculum, deleteCurriculum } from '@/lib/database'
+import { Curriculum, archiveCurriculum, deleteCurriculum } from '@/lib/database'
 import { BookOpen, Clock, Target, CalendarDays, Play, MoreVertical, Edit, Archive, Trash2 } from 'lucide-react'
 
 export default function DashboardPage() {
-  const { user, loading, signOut } = useAuth()
+  const { user, session, loading, signOut } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [curricula, setCurricula] = useState<Curriculum[]>([])
@@ -18,6 +18,7 @@ export default function DashboardPage() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [isLoadingData, setIsLoadingData] = useState(false)
 
   useEffect(() => {
     if (!loading && !user) {
@@ -26,10 +27,11 @@ export default function DashboardPage() {
   }, [user, loading, router])
 
   useEffect(() => {
-    if (user) {
+    if (user && session?.access_token && !isLoadingData) {
+      console.log('Dashboard: Loading user data for user:', user.id)
       loadUserData()
     }
-  }, [user])
+  }, [user?.id, session?.access_token]) // Depend on user.id and session token
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -46,30 +48,50 @@ export default function DashboardPage() {
   }, [openDropdown])
 
   const loadUserData = async () => {
-    if (!user) return
+    if (!user || !session || isLoadingData) return
+    
+    console.log('Dashboard: Starting loadUserData for user:', user.id)
+    console.log('Dashboard: Session object:', session)
+    console.log('Dashboard: Session access_token:', session.access_token)
+    console.log('Dashboard: Session refresh_token:', session.refresh_token)
+    setIsLoadingData(true)
     
     try {
-      // Get first name from user metadata
-      const firstName = user.user_metadata?.first_name
-      
-      // Ensure user profile exists first
-      const profile = await getUserProfile(user.id, user.email, firstName)
-      if (profile) {
-        setUserProfile(profile)
-      } else {
-        // If profile creation failed, try with email and first name
-        const newProfile = await createUserProfile(user.id, user.email, firstName)
-        if (newProfile) {
-          setUserProfile(newProfile)
+      // Fetch user profile using API route
+      const profileResponse = await fetch('/api/user/profile', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
         }
+      })
+      
+      if (profileResponse.ok) {
+        const profile = await profileResponse.json()
+        setUserProfile(profile)
+        console.log('Successfully loaded user profile:', profile)
+      } else {
+        console.error('Failed to fetch user profile:', profileResponse.status)
       }
       
-      // Then fetch curricula
-      const userCurricula = await getUserCurricula(user.id, user.email, firstName)
-      setCurricula(userCurricula)
+      // Fetch curricula using API route
+      const curriculaResponse = await fetch('/api/user/curricula', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      if (curriculaResponse.ok) {
+        const userCurricula = await curriculaResponse.json()
+        setCurricula(userCurricula)
+        console.log('Successfully loaded curricula:', userCurricula.length, 'items')
+      } else {
+        console.error('Failed to fetch curricula:', curriculaResponse.status)
+      }
     } catch (error) {
       console.error('Error loading user data:', error)
     } finally {
+      setIsLoadingData(false)
       setDataLoading(false)
     }
   }

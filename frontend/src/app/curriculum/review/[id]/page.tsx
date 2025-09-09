@@ -1,58 +1,72 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, use, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabase'
 import CurriculumGenerationProgress from '@/components/CurriculumGenerationProgress'
 import CurriculumReview from '@/components/CurriculumReview'
 import Logo from '@/components/Logo'
 import { Loader2 } from 'lucide-react'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
-
-export default function CurriculumReviewPage({ params }: { params: { id: string } }) {
+export default function CurriculumReviewPage({ params }: { params: Promise<{ id: string }> }) {
   const [curriculum, setCurriculum] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [isGenerating, setIsGenerating] = useState(false)
   const [generationProgress, setGenerationProgress] = useState(0)
   const [generationStage, setGenerationStage] = useState<'analyzing' | 'calculating' | 'generating' | 'structuring' | 'finalizing'>('analyzing')
   const [error, setError] = useState<string | null>(null)
-  const { user } = useAuth()
+  const [hasLoaded, setHasLoaded] = useState(false)
+  const { user, session } = useAuth()
   const router = useRouter()
+  const isLoadingRef = useRef(false)
 
-  useEffect(() => {
-    if (!user) {
-      router.push('/login')
+  // Unwrap the params Promise
+  const resolvedParams = use(params)
+
+  const loadCurriculum = useCallback(async () => {
+    if (isLoadingRef.current) {
+      console.log('Already loading curriculum, skipping...')
       return
     }
-    loadCurriculum()
-  }, [user, params.id])
-
-  const loadCurriculum = async () => {
+    
+    if (!user?.id) {
+      console.log('No user ID available, skipping curriculum load')
+      return
+    }
+    
+    console.log('Loading curriculum with ID:', resolvedParams.id, 'for user:', user.id)
+    isLoadingRef.current = true
+    setLoading(true)
+    
     try {
       const { data, error } = await supabase
         .from('curricula')
         .select('*')
-        .eq('id', params.id)
-        .eq('user_id', user?.id)
+        .eq('id', resolvedParams.id)
+        .eq('user_id', user.id)
         .single()
 
       if (error) {
         console.error('Error loading curriculum:', error)
         setError('Failed to load curriculum')
+        isLoadingRef.current = false
+        setLoading(false)
         return
       }
 
       if (!data) {
+        console.log('No curriculum data found')
         setError('Curriculum not found')
+        isLoadingRef.current = false
+        setLoading(false)
         return
       }
 
+      console.log('Curriculum loaded successfully:', data.title)
+
       setCurriculum(data)
+      setHasLoaded(true)
 
       // If curriculum is pending approval, show generation progress
       if (data.approval_status === 'pending') {
@@ -63,9 +77,28 @@ export default function CurriculumReviewPage({ params }: { params: { id: string 
       console.error('Error loading curriculum:', err)
       setError('Failed to load curriculum')
     } finally {
+      isLoadingRef.current = false
       setLoading(false)
     }
-  }
+  }, [resolvedParams.id, user?.id])
+
+  useEffect(() => {
+    console.log('CurriculumReviewPage useEffect - user:', !!user, 'user.id:', user?.id, 'resolvedParams.id:', resolvedParams.id, 'hasLoaded:', hasLoaded)
+    if (!user) {
+      console.log('No user, redirecting to login')
+      router.push('/login')
+      return
+    }
+    if (!resolvedParams.id) {
+      console.log('No curriculum ID, skipping load')
+      return
+    }
+    if (hasLoaded) {
+      console.log('Curriculum already loaded, skipping')
+      return
+    }
+    loadCurriculum()
+  }, [user?.id, resolvedParams.id]) // Remove hasLoaded from dependencies to prevent loop
 
   const simulateGenerationProgress = () => {
     const stages: typeof generationStage[] = ['analyzing', 'calculating', 'generating', 'structuring', 'finalizing']
@@ -80,10 +113,7 @@ export default function CurriculumReviewPage({ params }: { params: { id: string 
         clearInterval(interval)
         setIsGenerating(false)
         setGenerationStage('finalizing')
-        // Reload curriculum to get updated data
-        setTimeout(() => {
-          loadCurriculum()
-        }, 1000)
+        // Don't reload curriculum - it's already loaded
       } else if (progress % 20 === 0 && currentStageIndex < stages.length - 1) {
         currentStageIndex++
         setGenerationStage(stages[currentStageIndex])
@@ -96,13 +126,18 @@ export default function CurriculumReviewPage({ params }: { params: { id: string 
       setIsGenerating(true)
       setError(null)
 
+      if (!session) {
+        throw new Error('No active session')
+      }
+
       const response = await fetch('/api/curriculum/approve', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
-          curriculumId: params.id,
+          curriculumId: resolvedParams.id,
           customizations,
           userId: user?.id
         })
@@ -135,7 +170,7 @@ export default function CurriculumReviewPage({ params }: { params: { id: string 
           customization_notes: reason,
           status: 'rejected'
         })
-        .eq('id', params.id)
+        .eq('id', resolvedParams.id)
 
       if (error) {
         throw new Error('Failed to reject curriculum')

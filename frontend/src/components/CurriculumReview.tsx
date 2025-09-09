@@ -36,7 +36,7 @@ export default function CurriculumReview({
   const [rejectReason, setRejectReason] = useState('')
   const [showRejectForm, setShowRejectForm] = useState(false)
 
-  const curriculumData = curriculum.curriculum_data || curriculum.syllabus_data
+  const curriculumData = curriculum.curriculum_data
   const sessionList = curriculumData?.session_list || []
 
   const toggleSection = (section: string) => {
@@ -110,7 +110,7 @@ export default function CurriculumReview({
               <BookOpen className="w-6 h-6 text-yellow-500" />
               <div>
                 <h2 className="text-xl font-semibold text-gray-900">Curriculum Overview</h2>
-                <p className="text-gray-600">{curriculumData?.title || curriculum.title}</p>
+                <p className="text-gray-600">{curriculumData?.curriculum_overview?.title || curriculum.title}</p>
               </div>
             </div>
             {expandedSections.has('overview') ? (
@@ -136,7 +136,7 @@ export default function CurriculumReview({
                     <span className="text-sm font-medium text-gray-700">Total Duration</span>
                   </div>
                   <div className="text-2xl font-bold text-gray-900">
-                    {formatDuration(curriculumData?.total_estimated_hours * 60 || 0)}
+                    {formatDuration((curriculumData?.curriculum_overview?.total_estimated_hours || 0) * 60)}
                   </div>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg">
@@ -145,7 +145,7 @@ export default function CurriculumReview({
                     <span className="text-sm font-medium text-gray-700">Sessions</span>
                   </div>
                   <div className="text-2xl font-bold text-gray-900">
-                    {curriculumData?.total_sessions || sessionList.length}
+                    {curriculumData?.curriculum_overview?.total_sessions || sessionList.length}
                   </div>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg">
@@ -153,21 +153,21 @@ export default function CurriculumReview({
                     <Target className="w-4 h-4 text-gray-500" />
                     <span className="text-sm font-medium text-gray-700">Type</span>
                   </div>
-                  <div className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getCurriculumTypeColor(curriculumData?.curriculum_type || 'standard')}`}>
-                    {(curriculumData?.curriculum_type || 'standard').replace('_', ' ')}
+                  <div className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getCurriculumTypeColor(curriculum.curriculum_type || 'standard')}`}>
+                    {(curriculum.curriculum_type || 'standard').replace('_', ' ')}
                   </div>
                 </div>
               </div>
 
               <div className="mb-4">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Description</h3>
-                <p className="text-gray-700">{curriculumData?.description || 'No description available'}</p>
+                <p className="text-gray-700">{curriculumData?.curriculum_overview?.description || 'No description available'}</p>
               </div>
 
               <div className="mb-4">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Learning Outcomes</h3>
                 <ul className="list-disc list-inside space-y-1 text-gray-700">
-                  {(curriculumData?.learning_outcomes || []).map((outcome: string, index: number) => (
+                  {(curriculumData?.curriculum_overview?.learning_outcomes || []).map((outcome: string, index: number) => (
                     <li key={index}>{outcome}</li>
                   ))}
                 </ul>
@@ -226,8 +226,8 @@ export default function CurriculumReview({
                             {session.content_density || 'moderate'}
                           </span>
                         </div>
-                        <h3 className="font-semibold text-gray-900 mb-1">{session.title}</h3>
-                        <p className="text-sm text-gray-600 mb-2">{session.description}</p>
+                        <h3 className="font-semibold text-gray-900 mb-1">{session.title || `Session ${index + 1}`}</h3>
+                        <p className="text-sm text-gray-600 mb-2">{session.description || session.overview || 'No description available'}</p>
                         <div className="flex items-center space-x-4 text-xs text-gray-500">
                           <span>⏱️ {formatDuration(curriculum.time_availability?.session_length || 60)}</span>
                           <span>📖 {session.estimated_reading_time || 0} min read</span>

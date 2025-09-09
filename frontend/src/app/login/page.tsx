@@ -46,16 +46,7 @@ export default function LoginPage() {
 
     try {
       if (isSignUp) {
-        // For sign up, first try to sign in to see if account exists
-        const { error: signInError } = await signIn(email, password)
-        
-        if (!signInError) {
-          // Account exists and password is correct, sign them in
-          router.push('/dashboard')
-          return
-        }
-        
-        // If sign in failed, try to create new account
+        // For sign up, try to create new account
         const { error: signUpError } = await signUp(email, password, firstName)
         
         if (signUpError) {
