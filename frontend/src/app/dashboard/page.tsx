@@ -259,7 +259,9 @@ export default function DashboardPage() {
           ) : curricula.length > 0 ? (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-semibold text-gray-900">Your Learning Curricula</h2>
+                <h2 className="text-2xl font-semibold text-gray-900">
+                  {curricula.length === 1 ? 'Your Curriculum' : 'Your Curricula'}
+                </h2>
                 <motion.button
                   onClick={() => router.push('/onboarding')}
                   className="px-4 py-2 border-2 border-yellow-500 text-yellow-600 rounded-lg font-medium hover:bg-yellow-50 transition-colors flex items-center space-x-2"
