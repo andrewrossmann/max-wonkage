@@ -609,239 +609,105 @@ function PersonalBackgroundStep({
   onStopVoiceInput: () => void
   onNext: () => void
 }) {
-  const [currentQuestion, setCurrentQuestion] = useState(0)
-  const [isTyping, setIsTyping] = useState(false)
-  const chatContainerRef = useRef<HTMLDivElement>(null)
-  
-  const questions = [
+  const fields = [
     {
       id: 'background',
-      title: 'Tell me about your background and experience',
-      placeholder: 'Share your professional background, education, hobbies, and any relevant experiences... The more information you provide, the better! The ai will train on whatever details you give.',
-      icon: '👤'
+      label: 'Background and Experience',
+      placeholder: 'Share your professional background, education, hobbies, and any relevant experiences... The more information you provide, the better! The ai will train on whatever details you give.'
     },
     {
       id: 'interests',
-      title: 'What are your interests and passions?',
-      placeholder: 'What topics, activities, or subjects genuinely excite you? What do you love learning about?',
-      icon: '❤️'
+      label: 'Interests and Passions',
+      placeholder: 'What topics, activities, or subjects genuinely excite you? What do you love learning about?'
     },
     {
       id: 'experiences',
-      title: 'Any relevant experiences to share?',
-      placeholder: 'Previous experience with subjects you want to learn? Projects, courses, or skills you\'ve developed?',
-      icon: '🎯'
+      label: 'Relevant Experiences',
+      placeholder: 'Previous experience with subjects you want to learn? Projects, courses, or skills you\'ve developed?'
     },
     {
       id: 'goals',
-      title: 'What are your goals and aspirations?',
-      placeholder: 'What do you hope to achieve? Where do you see yourself in the future? What impact do you want to make?',
-      icon: '🚀'
+      label: 'Goals and Aspirations',
+      placeholder: 'What do you hope to achieve? Where do you see yourself in the future? What impact do you want to make?'
     }
   ]
 
-  const currentQ = questions[currentQuestion]
-  const currentValue = data[currentQ.id] || ''
-
-  // Scroll to bottom when content changes
-  useEffect(() => {
-    if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
-    }
-  }, [currentQuestion, currentValue, data])
-
-  const handleNext = () => {
-    if (currentQuestion < questions.length - 1) {
-      // Stop any active voice input when moving to next question
-      if (isListening) {
-        onStopVoiceInput()
-      }
-      
-      setIsTyping(true)
-      setTimeout(() => {
-        setCurrentQuestion(currentQuestion + 1)
-        setIsTyping(false)
-      }, 500)
-    }
-  }
-
-  const handlePrevious = () => {
-    if (currentQuestion > 0) {
-      // Stop any active voice input when moving to previous question
-      if (isListening) {
-        onStopVoiceInput()
-      }
-      
-      setIsTyping(true)
-      setTimeout(() => {
-        setCurrentQuestion(currentQuestion - 1)
-        setIsTyping(false)
-      }, 500)
-    }
-  }
-
-  const handleSubmit = () => {
-    if (currentValue.trim()) {
-      // Stop any active voice input when submitting
-      if (isListening) {
-        onStopVoiceInput()
-      }
-      
-      updateData({ [currentQ.id]: currentValue })
-      if (currentQuestion < questions.length - 1) {
-        handleNext()
-      } else {
-        // Move to next step (Time Availability) when on the last question
-        onNext()
-      }
-    }
-  }
-
-  const handleVoiceInput = () => {
-    if (isListening) {
+  const handleVoiceInput = (fieldId: string) => {
+    if (isListening && currentField === fieldId) {
       onStopVoiceInput()
     } else {
-      onStartVoiceInput(currentQ.id)
+      onStartVoiceInput(fieldId)
     }
   }
 
+  // No special key handling needed - let Enter work normally in textareas
+
+  const canProceed = fields.some(field => data[field.id] && data[field.id].trim())
+
   return (
-    <div className="max-w-4xl mx-auto">
-      {/* ChatGPT-style header */}
-      <div className="text-center mb-8">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-2">Terrific! New let's get to know you</h1>
-        <p className="text-gray-600">I'll ask you a few questions to create your personalized learning journey</p>
-      </div>
-
-      {/* Progress indicator */}
-      <div className="flex justify-center mb-8">
-        <div className="flex space-x-2">
-          {questions.map((_, index) => (
-            <div
-              key={index}
-              className={`w-2 h-2 rounded-full transition-colors ${
-                index <= currentQuestion ? 'bg-yellow-500' : 'bg-gray-300'
-              }`}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Chat-like interface */}
-      <div ref={chatContainerRef} className="space-y-6 max-h-[500px] overflow-y-auto pr-2">
-        {/* Conversation History */}
-        {questions.slice(0, currentQuestion).map((question, index) => {
-          const questionData = data[question.id]
-          if (!questionData) return null
-          
-          return (
-            <div key={question.id} className="space-y-4">
-              {/* AI Message */}
-              <div className="flex items-start">
-                <div className="flex-1">
-                  <div className="bg-gray-50 rounded-2xl p-4 max-w-2xl">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <span className="text-lg">{question.icon}</span>
-                      <h3 className="font-medium text-gray-900">{question.title}</h3>
-                    </div>
-                    <p className="text-gray-600 text-sm">{question.placeholder}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* User Response */}
-              <div className="flex items-start justify-end">
-                <div className="flex-1 max-w-2xl">
-                  <div className="bg-white border-2 border-yellow-500 text-gray-800 rounded-2xl p-4 ml-auto">
-                    <p className="text-sm">{questionData}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )
-        })}
-
-        {/* Current AI Message */}
-        <div className="flex items-start">
-          <div className="flex-1">
-            <div className="bg-gray-50 rounded-2xl p-4 max-w-2xl">
-              <div className="flex items-center space-x-2 mb-2">
-                <span className="text-lg">{currentQ.icon}</span>
-                <h3 className="font-medium text-gray-900">{currentQ.title}</h3>
-              </div>
-              <p className="text-gray-600 text-sm">{currentQ.placeholder}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Current User Response */}
-        {currentValue && (
-          <div className="flex items-start justify-end">
-            <div className="flex-1 max-w-2xl">
-              <div className="bg-white border-2 border-yellow-500 text-gray-800 rounded-2xl p-4 ml-auto">
-                <p className="text-sm">{currentValue}</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Input Area */}
-        <div className="flex items-start justify-end">
-          <div className="flex-1 max-w-2xl">
+    <div>
+      <h2 className="text-3xl font-bold text-gray-900 mb-2">Terrific! New let's get to know you</h2>
+      <p className="text-gray-600 mb-8">Tell us about yourself to create your personalized learning journey</p>
+      
+      <div className="space-y-6">
+        {fields.map((field) => (
+          <div key={field.id}>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {field.label}
+            </label>
             <div className="relative">
               <textarea
-                value={currentValue}
-                onChange={(e) => updateData({ [currentQ.id]: e.target.value })}
-                placeholder="Type your response here..."
-                rows={3}
-                className="w-full px-4 py-3 pr-20 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 resize-none bg-white shadow-sm"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault()
-                    handleSubmit()
-                  }
-                }}
+                value={data[field.id] || ''}
+                onChange={(e) => updateData({ [field.id]: e.target.value })}
+                placeholder={field.placeholder}
+                rows={4}
+                className="w-full px-4 py-2 pr-20 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 resize-none"
               />
               <div className="absolute right-2 bottom-2 flex space-x-1">
                 <button
-                  onClick={handleVoiceInput}
+                  onClick={() => handleVoiceInput(field.id)}
                   className={`p-2 rounded-full transition-colors ${
-                    isListening 
+                    isListening && currentField === field.id
                       ? 'bg-red-500 text-white animate-pulse hover:bg-red-600' 
-                      : isProcessing
+                      : isProcessing && currentField === field.id
                       ? 'bg-gray-300 text-gray-500 hover:bg-gray-400'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
-                  title={isListening ? 'Stop recording' : isProcessing ? 'Stop processing' : 'Start voice input'}
+                  title={isListening && currentField === field.id ? 'Stop recording' : isProcessing && currentField === field.id ? 'Stop processing' : 'Start voice input'}
                 >
-                  {isProcessing ? (
+                  {isProcessing && currentField === field.id ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : isListening ? (
+                  ) : isListening && currentField === field.id ? (
                     <MicOff className="w-4 h-4" />
                   ) : (
                     <Mic className="w-4 h-4" />
                   )}
                 </button>
-                <button
-                  onClick={handleSubmit}
-                  disabled={!currentValue.trim()}
-                  className="p-2 rounded-full bg-yellow-500 text-black hover:bg-yellow-600 disabled:bg-gray-300 disabled:text-gray-500 transition-colors"
-                  title="Send message"
-                >
-                  <Send className="w-4 h-4" />
-                </button>
               </div>
             </div>
-            {isListening && (
+            {isListening && currentField === field.id && (
               <p className="text-sm text-red-500 mt-2 flex items-center">
                 <Mic className="w-4 h-4 mr-1 animate-pulse" />
                 Listening... Speak now
               </p>
             )}
           </div>
-        </div>
+        ))}
       </div>
 
+      {/* Submit Button */}
+      <div className="flex justify-end mt-8">
+        <button
+          onClick={onNext}
+          disabled={!canProceed}
+          className="flex items-center space-x-2 px-6 py-3 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-600 disabled:bg-gray-300 disabled:text-gray-500 transition-colors"
+        >
+          <span>Continue</span>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
     </div>
   )
 }
@@ -1065,12 +931,6 @@ function SkillLevelStep({
               placeholder="What do you want to achieve? (e.g., Build a web app, Have conversations in Spanish, Write a novel...)"
               rows={4}
               className="w-full px-4 py-2 pr-20 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 resize-none"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey && data.skillLevel && data.goals.trim()) {
-                  e.preventDefault()
-                  onNext()
-                }
-              }}
             />
             <div className="absolute right-2 bottom-2 flex space-x-1">
               <button
@@ -1097,18 +957,6 @@ function SkillLevelStep({
                 ) : (
                   <Mic className="w-4 h-4" />
                 )}
-              </button>
-              <button
-                onClick={() => {
-                  if (data.skillLevel && data.goals.trim()) {
-                    onNext()
-                  }
-                }}
-                disabled={!data.skillLevel || !data.goals.trim()}
-                className="p-2 rounded-full bg-yellow-500 text-black hover:bg-yellow-600 disabled:bg-gray-300 disabled:text-gray-500 transition-colors"
-                title="Continue to next step"
-              >
-                <Send className="w-4 h-4" />
               </button>
             </div>
           </div>
