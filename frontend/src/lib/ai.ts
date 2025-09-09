@@ -211,7 +211,7 @@ Return a JSON object with all session components properly structured and scaled.
       const prompt = await this.generateCurriculumPrompt(request)
       
       const response = await openai.chat.completions.create({
-        model: 'gpt-4',
+        model: 'gpt-3.5-turbo',
         messages: [
           {
             role: 'system',
@@ -251,7 +251,7 @@ Return a JSON object with all session components properly structured and scaled.
       const prompt = await this.generateSessionPrompt(sessionData, userProfile)
       
       const response = await openai.chat.completions.create({
-        model: 'gpt-4',
+        model: 'gpt-3.5-turbo',
         messages: [
           {
             role: 'system',

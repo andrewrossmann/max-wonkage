@@ -1,12 +1,13 @@
 // Simple test script to verify OpenAI integration
 // Run with: node test-ai.js
 
+require('dotenv').config({ path: '.env.local' })
 const OpenAI = require('openai')
 
 // Test configuration
 const testConfig = {
   apiKey: process.env.OPENAI_API_KEY,
-  model: 'gpt-4',
+  model: 'gpt-3.5-turbo',
   temperature: 0.7,
   maxTokens: 1000
 }
@@ -93,7 +94,7 @@ Return a JSON object with:
 Keep it simple and focused.`
 
     const response = await openai.chat.completions.create({
-      model: testConfig.model,
+      model: 'gpt-3.5-turbo',
       messages: [
         {
           role: 'system',
