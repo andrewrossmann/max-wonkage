@@ -138,7 +138,7 @@ export default function OnboardingPage() {
               finalTranscriptRef.current += (finalTranscriptRef.current ? ' ' : '') + newFinalTranscript
             }
           } else if (activeField === 'goals') {
-            // Handle goals field in subject data
+            // Handle goals field - could be in personalBackground (step 2) or subject (step 4)
             const existingContent = existingContentRef.current
             const accumulatedFinal = finalTranscriptRef.current
             const fullTranscript = existingContent + 
@@ -149,15 +149,16 @@ export default function OnboardingPage() {
               interimTranscript
             console.log('Updating goals field with:', fullTranscript)
             console.log('updateGoalsRef.current exists:', !!updateGoalsRef.current)
-            // Use the updateGoalsRef function to update the goals field
+            // Use the updateGoalsRef function to update the goals field (for step 4)
             if (updateGoalsRef.current) {
               console.log('Calling updateGoalsRef.current with:', fullTranscript)
               updateGoalsRef.current(fullTranscript)
             } else {
-              console.log('updateGoalsRef.current is null, falling back to setData')
+              // For step 2, update personalBackground.goals
+              console.log('updateGoalsRef.current is null, updating personalBackground.goals')
               setData(prev => ({
                 ...prev,
-                subject: { ...prev.subject, goals: fullTranscript }
+                personalBackground: { ...prev.personalBackground, goals: fullTranscript }
               }))
             }
             
@@ -202,10 +203,11 @@ export default function OnboardingPage() {
                 console.log('Calling updateGoalsRef.current (onend) with:', fullTranscript)
                 updateGoalsRef.current(fullTranscript)
               } else {
-                console.log('updateGoalsRef.current is null (onend), falling back to setData')
+                // For step 2, update personalBackground.goals
+                console.log('updateGoalsRef.current is null (onend), updating personalBackground.goals')
                 setData(prev => ({
                   ...prev,
-                  subject: { ...prev.subject, goals: fullTranscript }
+                  personalBackground: { ...prev.personalBackground, goals: fullTranscript }
                 }))
               }
             }
@@ -239,7 +241,12 @@ export default function OnboardingPage() {
       
       // Capture existing content for this field
       if (field === 'goals') {
-        existingContentRef.current = data.subject.goals || ''
+        // For goals field, check if we're in step 2 (personalBackground) or step 4 (subject)
+        if (currentStep === 2) {
+          existingContentRef.current = data.personalBackground.goals || ''
+        } else {
+          existingContentRef.current = data.subject.goals || ''
+        }
       } else {
         existingContentRef.current = (data.personalBackground as any)[field] || ''
       }
