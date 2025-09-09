@@ -81,6 +81,7 @@ export default function OnboardingPage() {
   const finalTranscriptRef = useRef<string>('')
   const currentFieldRef = useRef<string | null>(null)
   const existingContentRef = useRef<string>('')
+  const updateGoalsRef = useRef<((goals: string) => void) | null>(null)
 
   const steps = [
     { id: 1, title: 'Choose Subject', icon: BookOpen },
@@ -119,7 +120,7 @@ export default function OnboardingPage() {
           // Update the field with existing content + accumulated final + new final + interim
           const activeField = currentFieldRef.current
           console.log('Current field:', activeField, 'Available fields:', Object.keys(data.personalBackground))
-          if (activeField && activeField in data.personalBackground) {
+          if (activeField && activeField in data.personalBackground && activeField !== 'goals') {
             // Use the captured existing content + accumulated final + new final + interim
             const existingContent = existingContentRef.current
             const accumulatedFinal = finalTranscriptRef.current
@@ -131,6 +132,34 @@ export default function OnboardingPage() {
               interimTranscript
             console.log('Updating field with:', fullTranscript)
             updateData('personalBackground', { [activeField]: fullTranscript })
+            
+            // Update the accumulated final transcript
+            if (newFinalTranscript) {
+              finalTranscriptRef.current += (finalTranscriptRef.current ? ' ' : '') + newFinalTranscript
+            }
+          } else if (activeField === 'goals') {
+            // Handle goals field in subject data
+            const existingContent = existingContentRef.current
+            const accumulatedFinal = finalTranscriptRef.current
+            const fullTranscript = existingContent + 
+              (existingContent && (accumulatedFinal || newFinalTranscript) ? ' ' : '') + 
+              accumulatedFinal + 
+              (accumulatedFinal && newFinalTranscript ? ' ' : '') + 
+              newFinalTranscript + 
+              interimTranscript
+            console.log('Updating goals field with:', fullTranscript)
+            console.log('updateGoalsRef.current exists:', !!updateGoalsRef.current)
+            // Use the updateGoalsRef function to update the goals field
+            if (updateGoalsRef.current) {
+              console.log('Calling updateGoalsRef.current with:', fullTranscript)
+              updateGoalsRef.current(fullTranscript)
+            } else {
+              console.log('updateGoalsRef.current is null, falling back to setData')
+              setData(prev => ({
+                ...prev,
+                subject: { ...prev.subject, goals: fullTranscript }
+              }))
+            }
             
             // Update the accumulated final transcript
             if (newFinalTranscript) {
@@ -150,7 +179,7 @@ export default function OnboardingPage() {
         recognitionRef.current.onend = () => {
           // Ensure final transcript is saved when recognition ends (timeout or manual stop)
           const activeField = currentFieldRef.current
-          if (activeField && activeField in data.personalBackground) {
+          if (activeField && activeField in data.personalBackground && activeField !== 'goals') {
             const existingContent = existingContentRef.current
             const accumulatedFinal = finalTranscriptRef.current
             
@@ -159,6 +188,26 @@ export default function OnboardingPage() {
               const fullTranscript = existingContent + (existingContent ? ' ' : '') + accumulatedFinal
               console.log('Final update on end:', fullTranscript)
               updateData('personalBackground', { [activeField]: fullTranscript })
+            }
+          } else if (activeField === 'goals') {
+            const existingContent = existingContentRef.current
+            const accumulatedFinal = finalTranscriptRef.current
+            
+            // Only update if we have new content
+            if (accumulatedFinal) {
+              const fullTranscript = existingContent + (existingContent ? ' ' : '') + accumulatedFinal
+              console.log('Final update on end for goals:', fullTranscript)
+              console.log('updateGoalsRef.current exists (onend):', !!updateGoalsRef.current)
+              if (updateGoalsRef.current) {
+                console.log('Calling updateGoalsRef.current (onend) with:', fullTranscript)
+                updateGoalsRef.current(fullTranscript)
+              } else {
+                console.log('updateGoalsRef.current is null (onend), falling back to setData')
+                setData(prev => ({
+                  ...prev,
+                  subject: { ...prev.subject, goals: fullTranscript }
+                }))
+              }
             }
           }
           setIsListening(false)
@@ -173,6 +222,13 @@ export default function OnboardingPage() {
     }
   }, [])
 
+  // Set the updateGoalsRef when on step 4
+  useEffect(() => {
+    if (currentStep === 4) {
+      updateGoalsRef.current = (goals: string) => updateData('subject', { goals })
+    }
+  }, [currentStep])
+
   const startVoiceInput = (field: string) => {
     console.log('Starting voice input for field:', field)
     if (recognitionRef.current && !isListening) {
@@ -182,7 +238,11 @@ export default function OnboardingPage() {
       setIsProcessing(true)
       
       // Capture existing content for this field
-      existingContentRef.current = (data.personalBackground as any)[field] || ''
+      if (field === 'goals') {
+        existingContentRef.current = data.subject.goals || ''
+      } else {
+        existingContentRef.current = (data.personalBackground as any)[field] || ''
+      }
       finalTranscriptRef.current = '' // Reset for new session
       
       console.log('Starting speech recognition with existing content:', existingContentRef.current)
@@ -384,6 +444,12 @@ export default function OnboardingPage() {
               <SkillLevelStep 
                 data={data.subject}
                 updateData={(updates) => updateData('subject', updates)}
+                isListening={isListening}
+                isProcessing={isProcessing}
+                currentField={currentField}
+                onStartVoiceInput={startVoiceInput}
+                onStopVoiceInput={stopVoiceInput}
+                onUpdateGoals={(goals) => updateData('subject', { goals })}
                 onNext={() => setCurrentStep(5)}
               />
             )}
@@ -813,7 +879,27 @@ function SubjectSelectionStep({ data, updateData, onNext }: { data: any, updateD
   )
 }
 
-function SkillLevelStep({ data, updateData, onNext }: { data: any, updateData: (updates: any) => void, onNext: () => void }) {
+function SkillLevelStep({ 
+  data, 
+  updateData, 
+  isListening, 
+  isProcessing, 
+  currentField, 
+  onStartVoiceInput, 
+  onStopVoiceInput,
+  onUpdateGoals,
+  onNext 
+}: { 
+  data: any
+  updateData: (updates: any) => void
+  isListening: boolean
+  isProcessing: boolean
+  currentField: string | null
+  onStartVoiceInput: (field: string) => void
+  onStopVoiceInput: () => void
+  onUpdateGoals: (goals: string) => void
+  onNext: () => void
+}) {
   const skillLevels = [
     { value: 'beginner', label: 'Beginner', description: 'Little to no experience' },
     { value: 'intermediate', label: 'Intermediate', description: 'Some experience, want to improve' },
@@ -852,19 +938,66 @@ function SkillLevelStep({ data, updateData, onNext }: { data: any, updateData: (
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Learning Goals
           </label>
-          <textarea
-            value={data.goals}
-            onChange={(e) => updateData({ goals: e.target.value })}
-            placeholder="What do you want to achieve? (e.g., Build a web app, Have conversations in Spanish, Write a novel...)"
-            rows={4}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey && data.skillLevel && data.goals.trim()) {
-                e.preventDefault()
-                onNext()
-              }
-            }}
-          />
+          <div className="relative">
+            <textarea
+              value={data.goals}
+              onChange={(e) => updateData({ goals: e.target.value })}
+              placeholder="What do you want to achieve? (e.g., Build a web app, Have conversations in Spanish, Write a novel...)"
+              rows={4}
+              className="w-full px-4 py-2 pr-20 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 resize-none"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey && data.skillLevel && data.goals.trim()) {
+                  e.preventDefault()
+                  onNext()
+                }
+              }}
+            />
+            <div className="absolute right-2 bottom-2 flex space-x-1">
+              <button
+                onClick={() => {
+                  if (isListening && currentField === 'goals') {
+                    onStopVoiceInput()
+                  } else {
+                    onStartVoiceInput('goals')
+                  }
+                }}
+                className={`p-2 rounded-full transition-colors ${
+                  isListening && currentField === 'goals'
+                    ? 'bg-red-500 text-white animate-pulse hover:bg-red-600' 
+                    : isProcessing && currentField === 'goals'
+                    ? 'bg-gray-300 text-gray-500 hover:bg-gray-400'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+                title={isListening && currentField === 'goals' ? 'Stop recording' : isProcessing && currentField === 'goals' ? 'Stop processing' : 'Start voice input'}
+              >
+                {isProcessing && currentField === 'goals' ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : isListening && currentField === 'goals' ? (
+                  <MicOff className="w-4 h-4" />
+                ) : (
+                  <Mic className="w-4 h-4" />
+                )}
+              </button>
+              <button
+                onClick={() => {
+                  if (data.skillLevel && data.goals.trim()) {
+                    onNext()
+                  }
+                }}
+                disabled={!data.skillLevel || !data.goals.trim()}
+                className="p-2 rounded-full bg-yellow-500 text-black hover:bg-yellow-600 disabled:bg-gray-300 disabled:text-gray-500 transition-colors"
+                title="Continue to next step"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+          {isListening && currentField === 'goals' && (
+            <p className="text-sm text-red-500 mt-2 flex items-center">
+              <Mic className="w-4 h-4 mr-1 animate-pulse" />
+              Listening... Speak now
+            </p>
+          )}
         </div>
       </div>
 
