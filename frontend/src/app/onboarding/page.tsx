@@ -1,11 +1,11 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/contexts/AuthContext'
 import Logo from '@/components/Logo'
-import { createCurriculum } from '@/lib/database'
+import { createCurriculum, getUserCurricula, Curriculum, updateCurriculum } from '@/lib/database'
 import { ChevronLeft, ChevronRight, Clock, BookOpen, Target, CheckCircle, Mic, MicOff, Send, Loader2, User } from 'lucide-react'
 
 // TypeScript declarations for Speech Recognition API
@@ -71,6 +71,12 @@ export default function OnboardingPage() {
   
   const { user } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  
+  // Edit mode state
+  const [isEditMode, setIsEditMode] = useState(false)
+  const [editingCurriculum, setEditingCurriculum] = useState<Curriculum | null>(null)
+  const [loadingCurriculum, setLoadingCurriculum] = useState(false)
   
   // Voice input state
   const [isListening, setIsListening] = useState(false)
@@ -90,6 +96,49 @@ export default function OnboardingPage() {
     { id: 4, title: 'Skill Level & Goals', icon: Target },
     { id: 5, title: 'Review & Confirm', icon: CheckCircle }
   ]
+
+  // Check for edit mode and load curriculum data
+  useEffect(() => {
+    const editId = searchParams.get('edit')
+    if (editId && user) {
+      setIsEditMode(true)
+      loadCurriculumForEdit(editId)
+    }
+  }, [searchParams, user])
+
+  // Load curriculum data for editing
+  const loadCurriculumForEdit = async (curriculumId: string) => {
+    if (!user) return
+    
+    setLoadingCurriculum(true)
+    try {
+      const curricula = await getUserCurricula(user.id, user.email, user.user_metadata?.first_name)
+      const curriculum = curricula.find(c => c.id === curriculumId)
+      
+      if (curriculum) {
+        setEditingCurriculum(curriculum)
+        // Pre-fill the form with existing data
+        setData({
+          personalBackground: curriculum.personal_background,
+          timeAvailability: curriculum.time_availability,
+          subject: {
+            topic: curriculum.subject,
+            skillLevel: curriculum.skill_level,
+            goals: curriculum.goals || '',
+            interests: [] // This would need to be stored separately or extracted from goals
+          }
+        })
+      } else {
+        console.error('Curriculum not found')
+        router.push('/dashboard')
+      }
+    } catch (error) {
+      console.error('Error loading curriculum:', error)
+      router.push('/dashboard')
+    } finally {
+      setLoadingCurriculum(false)
+    }
+  }
 
   // Initialize speech recognition
   useEffect(() => {
@@ -296,28 +345,48 @@ export default function OnboardingPage() {
     if (!user) return
     
     try {
-      // Create curriculum from onboarding data
-      const curriculum = await createCurriculum({
-        user_id: user.id,
-        title: `${data.subject.topic} Learning Journey`,
-        subject: data.subject.topic,
-        skill_level: data.subject.skillLevel,
-        goals: data.subject.goals,
-        personal_background: data.personalBackground,
-        time_availability: data.timeAvailability,
-        status: 'active',
-        progress: {}
-      })
+      if (isEditMode && editingCurriculum) {
+        // Update existing curriculum
+        const updatedCurriculum = await updateCurriculum(editingCurriculum.id, {
+          title: data.subject.topic,
+          subject: data.subject.topic,
+          skill_level: data.subject.skillLevel,
+          goals: data.subject.goals,
+          personal_background: data.personalBackground,
+          time_availability: data.timeAvailability,
+          status: 'active' // Reset to active when editing
+        })
 
-      if (curriculum) {
-        // TODO: Generate actual curriculum content with AI
-        console.log('Curriculum created:', curriculum)
-        router.push('/dashboard')
+        if (updatedCurriculum) {
+          console.log('Curriculum updated:', updatedCurriculum)
+          router.push('/dashboard')
+        } else {
+          console.error('Failed to update curriculum')
+        }
       } else {
-        console.error('Failed to create curriculum')
+        // Create new curriculum
+        const curriculum = await createCurriculum({
+          user_id: user.id,
+          title: data.subject.topic,
+          subject: data.subject.topic,
+          skill_level: data.subject.skillLevel,
+          goals: data.subject.goals,
+          personal_background: data.personalBackground,
+          time_availability: data.timeAvailability,
+          status: 'active',
+          progress: {}
+        })
+
+        if (curriculum) {
+          // TODO: Generate actual curriculum content with AI
+          console.log('Curriculum created:', curriculum)
+          router.push('/dashboard')
+        } else {
+          console.error('Failed to create curriculum')
+        }
       }
     } catch (error) {
-      console.error('Error creating curriculum:', error)
+      console.error('Error saving curriculum:', error)
     }
   }
 
@@ -326,6 +395,21 @@ export default function OnboardingPage() {
       ...prev,
       [section]: { ...prev[section], ...updates }
     }))
+  }
+
+  // Show loading state when loading curriculum for editing
+  if (loadingCurriculum) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <Logo showText={true} size={48} />
+          <div className="mt-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading curriculum data...</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -338,7 +422,7 @@ export default function OnboardingPage() {
               <Logo showText={true} size={32} />
             </div>
             <div className="text-sm text-gray-600">
-              Step {currentStep} of 5
+              {isEditMode ? 'Edit Curriculum' : `Step ${currentStep} of 5`}
             </div>
           </div>
         </div>
@@ -397,9 +481,9 @@ export default function OnboardingPage() {
                 <button
                   onClick={handleComplete}
                   className="px-4 py-2 bg-yellow-500 text-black rounded-lg font-medium hover:bg-yellow-600 transition-colors"
-                  title="Generate My Curriculum"
+                  title={isEditMode ? "Update My Curriculum" : "Generate My Curriculum"}
                 >
-                  Complete
+                  {isEditMode ? 'Update' : 'Complete'}
                 </button>
               )}
             </div>
@@ -466,6 +550,7 @@ export default function OnboardingPage() {
                 data={data}
                 onComplete={handleComplete}
                 onEditStep={setCurrentStep}
+                isEditMode={isEditMode}
               />
             )}
           </motion.div>
@@ -1025,7 +1110,7 @@ function SkillLevelStep({
   )
 }
 
-function ReviewStep({ data, onComplete, onEditStep }: { data: OnboardingData, onComplete: () => void, onEditStep: (step: number) => void }) {
+function ReviewStep({ data, onComplete, onEditStep, isEditMode }: { data: OnboardingData, onComplete: () => void, onEditStep: (step: number) => void, isEditMode: boolean }) {
   const [editingSection, setEditingSection] = useState<string | null>(null)
   const [editValues, setEditValues] = useState<{[key: string]: string}>({})
 
@@ -1171,7 +1256,7 @@ function ReviewStep({ data, onComplete, onEditStep }: { data: OnboardingData, on
           onClick={onComplete}
           className="px-8 py-3 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-600 transition-colors"
         >
-          Generate My Curriculum →
+          {isEditMode ? 'Update My Curriculum →' : 'Generate My Curriculum →'}
         </button>
       </div>
     </div>

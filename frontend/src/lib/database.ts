@@ -175,6 +175,39 @@ export async function updateCurriculum(curriculumId: string, updates: Partial<Cu
   return data
 }
 
+export async function archiveCurriculum(curriculumId: string): Promise<Curriculum | null> {
+  const { data, error } = await supabase
+    .from('curricula')
+    .update({ 
+      status: 'paused',
+      updated_at: new Date().toISOString() 
+    })
+    .eq('id', curriculumId)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error archiving curriculum:', error)
+    return null
+  }
+
+  return data
+}
+
+export async function deleteCurriculum(curriculumId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('curricula')
+    .delete()
+    .eq('id', curriculumId)
+
+  if (error) {
+    console.error('Error deleting curriculum:', error)
+    return false
+  }
+
+  return true
+}
+
 // Learning Session Functions
 export async function getCurriculumSessions(curriculumId: string): Promise<LearningSession[]> {
   const { data, error } = await supabase

@@ -5,8 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import Logo from '@/components/Logo'
-import { getUserProfile, createUserProfile, getUserCurricula, Curriculum } from '@/lib/database'
-import { BookOpen, Clock, Target, TrendingUp, Play, MoreVertical, Edit, Archive, Trash2 } from 'lucide-react'
+import { getUserProfile, createUserProfile, getUserCurricula, Curriculum, archiveCurriculum, deleteCurriculum } from '@/lib/database'
+import { BookOpen, Clock, Target, CalendarDays, Play, MoreVertical, Edit, Archive, Trash2 } from 'lucide-react'
 
 export default function DashboardPage() {
   const { user, loading, signOut } = useAuth()
@@ -16,6 +16,8 @@ export default function DashboardPage() {
   const [userProfile, setUserProfile] = useState<any>(null)
   const [dataLoading, setDataLoading] = useState(true)
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
+  const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!loading && !user) {
@@ -78,27 +80,97 @@ export default function DashboardPage() {
   }
 
   const handleEditCurriculum = (curriculumId: string) => {
-    // TODO: Implement edit functionality - could redirect to onboarding with pre-filled data
-    console.log('Edit curriculum:', curriculumId)
+    // Redirect to onboarding with the curriculum ID as a query parameter
+    // The onboarding page can then load the curriculum data and pre-fill the form
+    router.push(`/onboarding?edit=${curriculumId}`)
     setOpenDropdown(null)
   }
 
   const handleArchiveCurriculum = async (curriculumId: string) => {
-    // TODO: Implement archive functionality
-    console.log('Archive curriculum:', curriculumId)
-    setOpenDropdown(null)
+    setActionLoading(curriculumId)
+    setError(null)
+    
+    try {
+      const result = await archiveCurriculum(curriculumId)
+      if (result) {
+        // Update the local state to reflect the change
+        setCurricula(prev => prev.map(curriculum => 
+          curriculum.id === curriculumId 
+            ? { ...curriculum, status: 'paused' as const }
+            : curriculum
+        ))
+        setOpenDropdown(null)
+      } else {
+        setError('Failed to archive curriculum. Please try again.')
+      }
+    } catch (err) {
+      console.error('Error archiving curriculum:', err)
+      setError('Failed to archive curriculum. Please try again.')
+    } finally {
+      setActionLoading(null)
+    }
   }
 
   const handleDeleteCurriculum = async (curriculumId: string) => {
     if (confirm('Are you sure you want to delete this curriculum? This action cannot be undone.')) {
-      // TODO: Implement delete functionality
-      console.log('Delete curriculum:', curriculumId)
-      setOpenDropdown(null)
+      setActionLoading(curriculumId)
+      setError(null)
+      
+      try {
+        const success = await deleteCurriculum(curriculumId)
+        if (success) {
+          // Remove the curriculum from local state
+          setCurricula(prev => prev.filter(curriculum => curriculum.id !== curriculumId))
+          setOpenDropdown(null)
+        } else {
+          setError('Failed to delete curriculum. Please try again.')
+        }
+      } catch (err) {
+        console.error('Error deleting curriculum:', err)
+        setError('Failed to delete curriculum. Please try again.')
+      } finally {
+        setActionLoading(null)
+      }
     }
   }
 
   const toggleDropdown = (curriculumId: string) => {
     setOpenDropdown(openDropdown === curriculumId ? null : curriculumId)
+  }
+
+  // Helper function to format weeks calculation
+  const formatWeeks = (totalDays: number): string => {
+    const weeks = totalDays / 7
+    const wholeWeeks = Math.floor(weeks)
+    const remainder = weeks - wholeWeeks
+    
+    if (remainder === 0) {
+      return `${wholeWeeks} week${wholeWeeks !== 1 ? 's' : ''}`
+    } else if (remainder <= 0.125) {
+      // 0-0.125: round down to whole weeks
+      return `${wholeWeeks} week${wholeWeeks !== 1 ? 's' : ''}`
+    } else if (remainder <= 0.25) {
+      // 0.125-0.25: show as 1/4
+      return `${wholeWeeks} 1/4 weeks`
+    } else if (remainder <= 0.375) {
+      // 0.25-0.375: show as 1/3
+      return `${wholeWeeks} 1/3 weeks`
+    } else if (remainder <= 0.5) {
+      // 0.375-0.5: show as 1/2
+      return `${wholeWeeks} 1/2 weeks`
+    } else if (remainder <= 0.625) {
+      // 0.5-0.625: show as 2/3
+      return `${wholeWeeks} 2/3 weeks`
+    } else if (remainder <= 0.75) {
+      // 0.625-0.75: show as 3/4
+      return `${wholeWeeks} 3/4 weeks`
+    } else if (remainder <= 0.875) {
+      // 0.75-0.875: round up to next whole week
+      return `${wholeWeeks + 1} week${wholeWeeks + 1 !== 1 ? 's' : ''}`
+    } else {
+      // 0.875+: round up to next whole week
+      return `${wholeWeeks + 1} week${wholeWeeks + 1 !== 1 ? 's' : ''}`
+    }
   }
 
   if (loading) {
@@ -163,6 +235,22 @@ export default function DashboardPage() {
             </p>
           </div>
 
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg"
+            >
+              <p className="text-red-600">{error}</p>
+              <button
+                onClick={() => setError(null)}
+                className="mt-2 text-sm text-red-500 hover:text-red-700 underline"
+              >
+                Dismiss
+              </button>
+            </motion.div>
+          )}
+
           {dataLoading ? (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500 mx-auto mb-4"></div>
@@ -209,7 +297,7 @@ export default function DashboardPage() {
                             ? 'bg-blue-100 text-blue-800'
                             : 'bg-gray-100 text-gray-800'
                         }`}>
-                          {curriculum.status}
+                          {curriculum.status === 'paused' ? 'archived' : curriculum.status}
                         </span>
                         <div className="relative">
                           <button
@@ -222,24 +310,35 @@ export default function DashboardPage() {
                             <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 min-w-[120px]">
                               <button
                                 onClick={() => handleEditCurriculum(curriculum.id)}
-                                className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                                disabled={actionLoading === curriculum.id}
+                                className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 <Edit className="w-3 h-3" />
                                 <span>Edit</span>
                               </button>
                               <button
                                 onClick={() => handleArchiveCurriculum(curriculum.id)}
-                                className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                                disabled={actionLoading === curriculum.id}
+                                className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                               >
-                                <Archive className="w-3 h-3" />
-                                <span>Archive</span>
+                                {actionLoading === curriculum.id ? (
+                                  <div className="w-3 h-3 border border-gray-300 border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                  <Archive className="w-3 h-3" />
+                                )}
+                                <span>{actionLoading === curriculum.id ? 'Archiving...' : 'Archive'}</span>
                               </button>
                               <button
                                 onClick={() => handleDeleteCurriculum(curriculum.id)}
-                                className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                                disabled={actionLoading === curriculum.id}
+                                className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                               >
-                                <Trash2 className="w-3 h-3" />
-                                <span>Delete</span>
+                                {actionLoading === curriculum.id ? (
+                                  <div className="w-3 h-3 border border-red-300 border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                  <Trash2 className="w-3 h-3" />
+                                )}
+                                <span>{actionLoading === curriculum.id ? 'Deleting...' : 'Delete'}</span>
                               </button>
                             </div>
                           )}
@@ -249,12 +348,16 @@ export default function DashboardPage() {
                     
                     <div className="space-y-3 mb-4">
                       <div className="flex items-center text-sm text-gray-600">
+                        <Target className="w-4 h-4 mr-2" />
+                        {curriculum.skill_level} level
+                      </div>
+                      <div className="flex items-center text-sm text-gray-600">
                         <Clock className="w-4 h-4 mr-2" />
                         {curriculum.time_availability.sessionsPerWeek} sessions/week, {curriculum.time_availability.sessionLength}min each
                       </div>
                       <div className="flex items-center text-sm text-gray-600">
-                        <Target className="w-4 h-4 mr-2" />
-                        {curriculum.skill_level} level
+                        <CalendarDays className="w-4 h-4 mr-2" />
+                        {formatWeeks(curriculum.time_availability.totalDays)} total
                       </div>
                     </div>
                     

@@ -102,19 +102,51 @@ export default function LandingPage() {
           {/* Mobile Navigation */}
           {isMenuOpen && (
             <motion.nav
-              className="md:hidden py-4 border-t border-gray-200"
+              className="md:hidden py-4 border-t border-gray-200 bg-white/95 backdrop-blur-md shadow-lg"
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
             >
-              <div className="flex flex-col space-y-4">
-                <a href="#about" className={`${isScrolled ? 'text-gray-800' : 'text-white'} hover:text-yellow-400 transition-colors font-medium`}>About</a>
-                <a href="#features" className={`${isScrolled ? 'text-gray-800' : 'text-white'} hover:text-yellow-400 transition-colors font-medium`}>Features</a>
-                <a href="#how-it-works" className={`${isScrolled ? 'text-gray-800' : 'text-white'} hover:text-yellow-400 transition-colors font-medium`}>How it Works</a>
-                <a href="#contact" className={`${isScrolled ? 'text-gray-800' : 'text-white'} hover:text-yellow-400 transition-colors font-medium`}>Contact</a>
+              <div className="space-y-4">
+                {/* Navigation Links - Horizontal Grid */}
+                <div className="grid grid-cols-2 gap-2">
+                  <a 
+                    href="#about" 
+                    className="text-gray-800 hover:text-yellow-600 hover:bg-yellow-50 transition-all duration-200 font-medium px-3 py-2 rounded-lg text-center text-sm"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    About
+                  </a>
+                  <a 
+                    href="#features" 
+                    className="text-gray-800 hover:text-yellow-600 hover:bg-yellow-50 transition-all duration-200 font-medium px-3 py-2 rounded-lg text-center text-sm"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Features
+                  </a>
+                  <a 
+                    href="#how-it-works" 
+                    className="text-gray-800 hover:text-yellow-600 hover:bg-yellow-50 transition-all duration-200 font-medium px-3 py-2 rounded-lg text-center text-sm"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    How it Works
+                  </a>
+                  <a 
+                    href="#contact" 
+                    className="text-gray-800 hover:text-yellow-600 hover:bg-yellow-50 transition-all duration-200 font-medium px-3 py-2 rounded-lg text-center text-sm"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Contact
+                  </a>
+                </div>
+                
+                {/* Login Button - Full Width */}
                 <button 
-                  onClick={() => router.push('/login')}
-                  className="px-6 py-2 bg-yellow-400 text-black rounded-lg hover:bg-yellow-300 transition-all duration-200 font-semibold shadow-lg"
+                  onClick={() => {
+                    router.push('/login');
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full px-6 py-3 bg-yellow-400 text-black rounded-lg hover:bg-yellow-300 transition-all duration-200 font-semibold shadow-lg"
                 >
                   Log In
                 </button>
