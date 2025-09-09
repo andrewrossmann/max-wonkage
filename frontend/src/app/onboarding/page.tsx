@@ -364,29 +364,44 @@ export default function OnboardingPage() {
           console.error('Failed to update curriculum')
         }
       } else {
-        // Create new curriculum
-        const curriculum = await createCurriculum({
-          user_id: user.id,
-          title: data.subject.topic,
+        // Generate AI curriculum
+        const userProfile = {
+          name: user.user_metadata?.first_name || 'User',
+          background: data.personalBackground.background,
+          currentRole: 'Professional',
+          skillLevel: data.subject.skillLevel,
           subject: data.subject.topic,
-          skill_level: data.subject.skillLevel,
           goals: data.subject.goals,
-          personal_background: data.personalBackground,
-          time_availability: data.timeAvailability,
-          status: 'active',
-          progress: {}
+          timeAvailability: data.timeAvailability,
+          personalBackground: data.personalBackground
+        }
+
+        // Call AI generation API
+        const response = await fetch('/api/curriculum/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userProfile,
+            userId: user.id
+          })
         })
 
-        if (curriculum) {
-          // TODO: Generate actual curriculum content with AI
-          console.log('Curriculum created:', curriculum)
-          router.push('/dashboard')
-        } else {
-          console.error('Failed to create curriculum')
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Failed to generate curriculum')
         }
+
+        const result = await response.json()
+        console.log('AI curriculum generated:', result)
+        
+        // Redirect to curriculum review page
+        router.push(`/curriculum/review/${result.curriculum.id}`)
       }
     } catch (error) {
-      console.error('Error saving curriculum:', error)
+      console.error('Error generating curriculum:', error)
+      // TODO: Show error message to user
     }
   }
 
