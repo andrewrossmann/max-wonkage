@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/contexts/AuthContext'
 import Logo from '@/components/Logo'
 import { createCurriculum, getUserCurricula, Curriculum, updateCurriculum } from '@/lib/database'
-import { ChevronLeft, ChevronRight, Clock, BookOpen, Target, CheckCircle, Mic, MicOff, Send, Loader2, User } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Clock, BookOpen, Target, CheckCircle, Mic, MicOff, Send, Loader2, User, Edit3 } from 'lucide-react'
 
 // TypeScript declarations for Speech Recognition API
 declare global {
@@ -91,13 +91,19 @@ export default function OnboardingPage() {
   
   // Curriculum generation state
   const [isGenerating, setIsGenerating] = useState(false)
+  
+  // Prompt generation state
+  const [customPrompt, setCustomPrompt] = useState<string>('')
+  const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false)
+  const [showPromptStep, setShowPromptStep] = useState(false)
 
   const steps = [
     { id: 1, title: 'Choose Subject', icon: BookOpen },
     { id: 2, title: 'Tell Us About You', icon: User },
     { id: 3, title: 'Time Availability', icon: Clock },
     { id: 4, title: 'Skill Level & Goals', icon: Target },
-    { id: 5, title: 'Review & Confirm', icon: CheckCircle }
+    { id: 5, title: 'Review & Confirm', icon: CheckCircle },
+    { id: 6, title: 'Customize Prompt', icon: Edit3 }
   ]
 
   // Check for edit mode and load curriculum data
@@ -333,7 +339,7 @@ export default function OnboardingPage() {
   }
 
   const nextStep = () => {
-    if (currentStep < 5) {
+    if (currentStep < 6) {
       setCurrentStep(currentStep + 1)
     }
   }
@@ -341,6 +347,54 @@ export default function OnboardingPage() {
   const prevStep = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1)
+    }
+  }
+
+  const generateSmartPrompt = async () => {
+    if (!user || !session) {
+      console.error('User or session not available')
+      return
+    }
+
+    try {
+      setIsGeneratingPrompt(true)
+      const userProfile = {
+        name: user.user_metadata?.first_name || 'User',
+        background: data.personalBackground.background,
+        currentRole: 'Professional',
+        skillLevel: data.subject.skillLevel,
+        subject: data.subject.topic,
+        goals: data.subject.goals,
+        timeAvailability: data.timeAvailability,
+        personalBackground: data.personalBackground
+      }
+
+      const response = await fetch('/api/curriculum/generate-prompt', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          userProfile,
+          userId: user.id
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to generate prompt')
+      }
+
+      const result = await response.json()
+      setCustomPrompt(result.prompt)
+      setShowPromptStep(true)
+      setCurrentStep(6)
+    } catch (error) {
+      console.error('Error generating prompt:', error)
+      // TODO: Show error message to user
+    } finally {
+      setIsGeneratingPrompt(false)
     }
   }
 
@@ -395,7 +449,8 @@ export default function OnboardingPage() {
           },
           body: JSON.stringify({
             userProfile,
-            userId: user.id
+            userId: user.id,
+            customPrompt: customPrompt || undefined
           })
         })
 
@@ -449,7 +504,7 @@ export default function OnboardingPage() {
               <Logo showText={true} size={32} />
             </div>
             <div className="text-sm text-gray-600">
-              {isEditMode ? 'Edit Curriculum' : `Step ${currentStep} of 5`}
+              {isEditMode ? 'Edit Curriculum' : `Step ${currentStep} of 6`}
             </div>
           </div>
         </div>
@@ -496,7 +551,7 @@ export default function OnboardingPage() {
               ))}
               
               {/* Forward arrow or Complete button */}
-              {currentStep < 5 ? (
+              {currentStep < 6 ? (
                 <button
                   onClick={nextStep}
                   className="p-2 rounded-full hover:bg-gray-200 transition-colors"
@@ -577,7 +632,19 @@ export default function OnboardingPage() {
                 data={data}
                 onComplete={handleComplete}
                 onEditStep={setCurrentStep}
+                onGeneratePrompt={generateSmartPrompt}
                 isEditMode={isEditMode}
+                isGenerating={isGenerating}
+                isGeneratingPrompt={isGeneratingPrompt}
+              />
+            )}
+            
+            {currentStep === 6 && (
+              <PromptReviewStep 
+                prompt={customPrompt}
+                onPromptChange={setCustomPrompt}
+                onComplete={handleComplete}
+                onBack={() => setCurrentStep(5)}
                 isGenerating={isGenerating}
               />
             )}
@@ -986,7 +1053,7 @@ function SkillLevelStep({
   )
 }
 
-function ReviewStep({ data, onComplete, onEditStep, isEditMode, isGenerating }: { data: OnboardingData, onComplete: () => void, onEditStep: (step: number) => void, isEditMode: boolean, isGenerating: boolean }) {
+function ReviewStep({ data, onComplete, onEditStep, onGeneratePrompt, isEditMode, isGenerating, isGeneratingPrompt }: { data: OnboardingData, onComplete: () => void, onEditStep: (step: number) => void, onGeneratePrompt: () => void, isEditMode: boolean, isGenerating: boolean, isGeneratingPrompt: boolean }) {
   const [editingSection, setEditingSection] = useState<string | null>(null)
   const [editValues, setEditValues] = useState<{[key: string]: string}>({})
 
@@ -1128,6 +1195,89 @@ function ReviewStep({ data, onComplete, onEditStep, isEditMode, isGenerating }: 
         >
           ← Back to Previous Step
         </button>
+        {isEditMode ? (
+          <button
+            onClick={onComplete}
+            disabled={isGenerating}
+            className="px-8 py-3 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+          >
+            {isGenerating ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-black"></div>
+                <span>Updating...</span>
+              </>
+            ) : (
+              <>
+                <span>Update My Curriculum →</span>
+              </>
+            )}
+          </button>
+        ) : (
+          <button
+            onClick={onGeneratePrompt}
+            disabled={isGeneratingPrompt}
+            className="px-8 py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+          >
+            {isGeneratingPrompt ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                <span>Generating Prompt...</span>
+              </>
+            ) : (
+              <>
+                <Edit3 className="w-4 h-4" />
+                <span>Customize AI Prompt →</span>
+              </>
+            )}
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function PromptReviewStep({ prompt, onPromptChange, onComplete, onBack, isGenerating }: { 
+  prompt: string, 
+  onPromptChange: (prompt: string) => void, 
+  onComplete: () => void, 
+  onBack: () => void, 
+  isGenerating: boolean 
+}) {
+  return (
+    <div>
+      <h2 className="text-3xl font-bold text-gray-900 mb-2">Customize Your AI Prompt</h2>
+      <p className="text-gray-600 mb-8">
+        Review and edit the AI prompt that will be used to generate your curriculum. 
+        You can modify it to better reflect your specific needs and preferences.
+      </p>
+      
+      <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
+        <div className="p-6">
+          <label htmlFor="prompt" className="block text-sm font-medium text-gray-700 mb-2">
+            AI Generation Prompt
+          </label>
+          <textarea
+            id="prompt"
+            value={prompt}
+            onChange={(e) => onPromptChange(e.target.value)}
+            className="w-full h-96 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 resize-none font-mono text-sm"
+            placeholder="Your AI prompt will appear here..."
+          />
+          <p className="mt-2 text-sm text-gray-500">
+            This prompt will be used by the AI to generate your personalized curriculum. 
+            Feel free to modify it to better suit your needs.
+          </p>
+        </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-200">
+        <button
+          onClick={onBack}
+          className="px-6 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors"
+        >
+          ← Back to Review
+        </button>
         <button
           onClick={onComplete}
           disabled={isGenerating}
@@ -1136,11 +1286,11 @@ function ReviewStep({ data, onComplete, onEditStep, isEditMode, isGenerating }: 
           {isGenerating ? (
             <>
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-black"></div>
-              <span>Generating...</span>
+              <span>Generating Curriculum...</span>
             </>
           ) : (
             <>
-              <span>{isEditMode ? 'Update My Curriculum →' : 'Generate My Curriculum →'}</span>
+              <span>Generate My Curriculum →</span>
             </>
           )}
         </button>

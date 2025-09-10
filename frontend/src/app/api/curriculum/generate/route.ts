@@ -11,7 +11,7 @@ const supabase = createClient(
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { userProfile, userId } = body
+    const { userProfile, userId, customPrompt } = body
 
     if (!userProfile || !userId) {
       return NextResponse.json(
@@ -67,7 +67,8 @@ export async function POST(request: NextRequest) {
 
     // Generate curriculum using AI
     const curriculum = await aiCurriculumGenerator.generateCurriculum({
-      userProfile
+      userProfile,
+      customPrompt
     })
 
     // Validate the generated curriculum
