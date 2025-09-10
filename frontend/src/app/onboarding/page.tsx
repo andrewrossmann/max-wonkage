@@ -35,7 +35,7 @@ interface OnboardingData {
     goals: string
   }
   timeAvailability: {
-    totalDays: number
+    totalWeeks: number
     sessionsPerWeek: number
     sessionLength: number
   }
@@ -57,7 +57,7 @@ export default function OnboardingPage() {
       goals: ''
     },
     timeAvailability: {
-      totalDays: 30,
+      totalWeeks: 4,
       sessionsPerWeek: 5,
       sessionLength: 60
     },
@@ -788,17 +788,17 @@ function TimeAvailabilityStep({ data, updateData, onNext }: { data: any, updateD
       <div className="space-y-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Total days available
+            Total weeks available
           </label>
           <input
             type="number"
-            value={data.totalDays}
-            onChange={(e) => updateData({ totalDays: parseInt(e.target.value) })}
+            value={data.totalWeeks}
+            onChange={(e) => updateData({ totalWeeks: parseInt(e.target.value) })}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
             min="1"
-            max="365"
+            max="52"
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && data.totalDays && data.sessionsPerWeek && data.sessionLength) {
+              if (e.key === 'Enter' && data.totalWeeks && data.sessionsPerWeek && data.sessionLength) {
                 e.preventDefault()
                 onNext()
               }
@@ -818,7 +818,7 @@ function TimeAvailabilityStep({ data, updateData, onNext }: { data: any, updateD
             min="1"
             max="7"
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && data.totalDays && data.sessionsPerWeek && data.sessionLength) {
+              if (e.key === 'Enter' && data.totalWeeks && data.sessionsPerWeek && data.sessionLength) {
                 e.preventDefault()
                 onNext()
               }
@@ -838,7 +838,7 @@ function TimeAvailabilityStep({ data, updateData, onNext }: { data: any, updateD
             min="15"
             max="240"
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && data.totalDays && data.sessionsPerWeek && data.sessionLength) {
+              if (e.key === 'Enter' && data.totalWeeks && data.sessionsPerWeek && data.sessionLength) {
                 e.preventDefault()
                 onNext()
               }
@@ -851,7 +851,7 @@ function TimeAvailabilityStep({ data, updateData, onNext }: { data: any, updateD
       <div className="flex justify-end mt-8">
         <button
           onClick={onNext}
-          disabled={!data.totalDays || !data.sessionsPerWeek || !data.sessionLength}
+          disabled={!data.totalWeeks || !data.sessionsPerWeek || !data.sessionLength}
           className="flex items-center space-x-2 px-6 py-3 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-600 disabled:bg-gray-300 disabled:text-gray-500 transition-colors"
         >
           <span>Continue</span>
@@ -1143,8 +1143,8 @@ function ReviewStep({ data, onComplete, onEditStep, onGeneratePrompt, isEditMode
           </div>
           <div className="grid grid-cols-3 gap-4 text-sm">
             <div className="bg-gray-50 p-3 rounded border">
-              <span className="text-gray-600">Total Days:</span>
-              <div className="font-medium">{data.timeAvailability.totalDays} days</div>
+              <span className="text-gray-600">Total Weeks:</span>
+              <div className="font-medium">{data.timeAvailability.totalWeeks} weeks</div>
             </div>
             <div className="bg-gray-50 p-3 rounded border">
               <span className="text-gray-600">Sessions/Week:</span>

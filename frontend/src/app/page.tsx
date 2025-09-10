@@ -378,7 +378,7 @@ export default function LandingPage() {
               {
                 step: "02",
                 title: "Time Availability?",
-                description: "How many days do you have? How long per session? We'll optimize everything for your schedule and construct a calendar with milestones to keep you on track.",
+                description: "How many weeks do you have? How long per session? We'll optimize everything for your schedule and construct a calendar with milestones to keep you on track.",
                 icon: <Clock className="w-8 h-8" />
               },
               {

@@ -14,7 +14,7 @@ export interface CurriculumGenerationRequest {
     subject: string
     goals: string
     timeAvailability: {
-      totalDays: number
+      totalWeeks: number
       sessionsPerWeek: number
       sessionLength: number
     }
@@ -76,9 +76,8 @@ export class AICurriculumGenerator {
       const { userProfile } = request
       const { timeAvailability, personalBackground } = userProfile
       
-      // Calculate total available hours - round down to full weeks
-      const totalWeeks = Math.floor(timeAvailability.totalDays / 7)
-      const totalSessions = totalWeeks * timeAvailability.sessionsPerWeek
+      // Calculate total available sessions
+      const totalSessions = timeAvailability.totalWeeks * timeAvailability.sessionsPerWeek
       const totalHours = (totalSessions * timeAvailability.sessionLength) / 60
       
       // Determine curriculum type based on session count
@@ -108,7 +107,7 @@ PERSONAL BACKGROUND:
 - Goals & Aspirations: ${personalBackground.goals}
 
 TIME AVAILABILITY:
-- Total Days: ${timeAvailability.totalDays} days
+- Total Weeks: ${timeAvailability.totalWeeks} weeks
 - Sessions per Week: ${timeAvailability.sessionsPerWeek}
 - Session Length: ${timeAvailability.sessionLength} minutes
 - Total Sessions: ${totalSessions}
@@ -128,7 +127,7 @@ Create a detailed, well-structured prompt that:
 The prompt should be comprehensive yet concise, and ready to be used directly with an AI curriculum generation system.`
 
       const response = await openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-4',
         messages: [
           {
             role: 'system',
@@ -159,9 +158,9 @@ The prompt should be comprehensive yet concise, and ready to be used directly wi
     const { userProfile } = request
     const { timeAvailability, personalBackground } = userProfile
     
-    // Calculate total available hours - round down to full weeks
-    const totalWeeks = Math.floor(timeAvailability.totalDays / 7)
-    const totalSessions = totalWeeks * timeAvailability.sessionsPerWeek
+    // Calculate total available sessions
+    // Limit total sessions to 10 for better generation quality
+    const totalSessions = Math.min(10, timeAvailability.totalWeeks * timeAvailability.sessionsPerWeek)
     const totalHours = (totalSessions * timeAvailability.sessionLength) / 60
     
     // Determine curriculum type based on session count
@@ -300,7 +299,7 @@ REQUIRED JSON FORMAT:
         : 'You are an expert curriculum designer. You MUST respond with ONLY valid JSON. Do not include any comments, explanations, or text outside the JSON object. The response must start with { and end with }.'
 
       const response = await openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-4',
         messages: [
           {
             role: 'system',
@@ -312,7 +311,7 @@ REQUIRED JSON FORMAT:
           }
         ],
         temperature: 0.7,
-        max_tokens: 4000,
+        max_tokens: 4096,
       })
 
       const content = response.choices[0]?.message?.content
@@ -341,6 +340,17 @@ REQUIRED JSON FORMAT:
         throw new Error('Invalid curriculum structure generated')
       }
 
+      // Check for session count mismatch (indicates truncation)
+      const expectedSessions = curriculum.curriculum_overview.total_sessions
+      const actualSessions = curriculum.session_list.length
+      
+      if (expectedSessions && expectedSessions !== actualSessions) {
+        console.warn(`Session count mismatch: expected ${expectedSessions}, got ${actualSessions}. This may indicate token limit truncation.`)
+        
+        // Update the total_sessions to match the actual session list
+        curriculum.curriculum_overview.total_sessions = actualSessions
+      }
+
       return curriculum
     } catch (error) {
       console.error('Error generating curriculum:', error)
@@ -353,7 +363,7 @@ REQUIRED JSON FORMAT:
       const prompt = await this.generateSessionPrompt(sessionData, userProfile)
       
       const response = await openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-4',
         messages: [
           {
             role: 'system',
@@ -365,7 +375,7 @@ REQUIRED JSON FORMAT:
           }
         ],
         temperature: 0.7,
-        max_tokens: 4000,
+        max_tokens: 4096,
       })
 
       const content = response.choices[0]?.message?.content
@@ -392,6 +402,44 @@ REQUIRED JSON FORMAT:
     // Estimate reading time based on 250 words per minute
     const wordCount = essay.split(/\s+/).length
     return Math.ceil(wordCount / 250)
+  }
+
+  generateSessionFile(session: SessionData): string {
+    const format = `📄 Session ${session.session_number}: ${session.title}
+
+Overview
+
+${session.overview}
+
+Recommended Readings
+
+${session.recommended_readings.map(reading => 
+  `${reading.title}${reading.description ? `\n${reading.description}` : ''}${reading.url ? `\nLink` : ''}`
+).join('\n\n')}
+
+Case Studies / Examples
+
+${session.case_studies.map(study => 
+  `${study.title} – ${study.description}${study.example ? `\n\n${study.example}` : ''}`
+).join('\n\n')}
+
+Videos
+
+${session.video_resources.map(video => 
+  `🎥 ${video.title}${video.description ? ` – ${video.description}` : ''}${video.duration ? ` (${video.duration})` : ''}${video.url ? `\nWatch` : ''}`
+).join('\n\n')}
+
+Discussion Prompts
+
+${session.discussion_prompts.map(prompt => `• ${prompt}`).join('\n')}
+
+AI essay summarizing recommended readings, long and detailed enough that it takes 15 - 20 minutes to read:
+
+${session.ai_essay}
+
+Reading Time: This essay is approximately ${Math.ceil(session.ai_essay.split(/\s+/).length / 250)} minutes to read carefully.`
+
+    return format
   }
 
   validateCurriculum(curriculum: GeneratedCurriculum): { isValid: boolean; errors: string[] } {
