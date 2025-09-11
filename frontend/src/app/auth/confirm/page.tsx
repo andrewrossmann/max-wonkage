@@ -81,10 +81,8 @@ export default function ConfirmPage() {
             console.log('Email confirmation successful:', result)
             setStatus('success')
             setMessage('Email confirmed successfully! Redirecting to your dashboard...')
-            // Redirect to dashboard after 2 seconds
-            setTimeout(() => {
-              router.push('/dashboard')
-            }, 2000)
+            // Redirect to dashboard immediately
+            router.push('/dashboard')
           }
         } else {
           // No valid parameters found
