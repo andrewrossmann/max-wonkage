@@ -156,6 +156,11 @@ export default function DashboardPage() {
     }
   }
 
+  const handleContinueLearning = (curriculumId: string) => {
+    // Navigate to the learning session page
+    router.push(`/curriculum/${curriculumId}/learn`)
+  }
+
   const toggleDropdown = (curriculumId: string) => {
     setOpenDropdown(openDropdown === curriculumId ? null : curriculumId)
   }
@@ -381,7 +386,13 @@ export default function DashboardPage() {
                       </div>
                       <div className="flex items-center text-sm text-gray-600">
                         <CalendarDays className="w-4 h-4 mr-2" />
-                        {formatWeeks(curriculum.time_availability.totalDays)} total
+                        {curriculum.time_availability.totalWeeks || curriculum.time_availability.totalDays ? 
+                          (curriculum.time_availability.totalWeeks ? 
+                            `${curriculum.time_availability.totalWeeks} week${curriculum.time_availability.totalWeeks !== 1 ? 's' : ''} total` :
+                            formatWeeks(curriculum.time_availability.totalDays)
+                          ) : 
+                          'Duration not specified'
+                        }
                       </div>
                     </div>
                     
@@ -392,6 +403,7 @@ export default function DashboardPage() {
                     )}
                     
                     <motion.button
+                      onClick={() => handleContinueLearning(curriculum.id)}
                       className="w-full px-4 py-2 bg-yellow-500 text-black rounded-lg font-medium hover:bg-yellow-600 transition-colors flex items-center justify-center space-x-2"
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}

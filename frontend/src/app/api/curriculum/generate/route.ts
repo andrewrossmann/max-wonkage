@@ -10,6 +10,13 @@ const supabase = createClient(
 
 export async function POST(request: NextRequest) {
   try {
+    // Debug environment variables
+    console.log('Environment check:', {
+      hasOpenAIKey: !!process.env.OPENAI_API_KEY,
+      hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      hasSupabaseKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    })
+
     const body = await request.json()
     const { userProfile, userId, customPrompt } = body
 
@@ -66,10 +73,12 @@ export async function POST(request: NextRequest) {
     console.log('User context test:', { testUser: testUser?.id, testError })
 
     // Generate curriculum using AI
+    console.log('Starting AI curriculum generation...')
     const curriculum = await aiCurriculumGenerator.generateCurriculum({
       userProfile,
       customPrompt
     })
+    console.log('AI curriculum generation completed')
 
     // Validate the generated curriculum
     const validation = aiCurriculumGenerator.validateCurriculum(curriculum)
@@ -108,6 +117,7 @@ export async function POST(request: NextRequest) {
         syllabus_data: curriculum.curriculum_overview,
         generation_prompt: JSON.stringify({
           userProfile,
+          customPrompt: customPrompt || null,
           timestamp: new Date().toISOString()
         }),
         generation_metadata: {
@@ -143,8 +153,15 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error in curriculum generation:', error)
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    })
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }

@@ -12,9 +12,10 @@ interface GenerationProgressProps {
   sessionCount?: number
   error?: string
   onRetry?: () => void
+  isFromPrompt?: boolean
 }
 
-const stageInfo = {
+const profileStageInfo = {
   analyzing: {
     title: 'Analyzing Your Profile',
     description: 'Understanding your background, goals, and learning preferences...',
@@ -47,6 +48,39 @@ const stageInfo = {
   }
 }
 
+const promptStageInfo = {
+  analyzing: {
+    title: 'Processing Your Prompt',
+    description: 'Analyzing your custom curriculum instructions...',
+    icon: '📝',
+    duration: 2000
+  },
+  calculating: {
+    title: 'Planning Curriculum Structure',
+    description: 'Mapping out the curriculum based on your prompt...',
+    icon: '🧩',
+    duration: 1500
+  },
+  generating: {
+    title: 'Generating Curriculum Content',
+    description: 'Creating learning materials based on your specifications...',
+    icon: '🤖',
+    duration: 3000
+  },
+  structuring: {
+    title: 'Structuring Learning Sessions',
+    description: 'Organizing content into cohesive learning sessions...',
+    icon: '📚',
+    duration: 2000
+  },
+  finalizing: {
+    title: 'Finalizing Your Curriculum',
+    description: 'Adding final touches and preparing for review...',
+    icon: '✨',
+    duration: 1000
+  }
+}
+
 export default function CurriculumGenerationProgress({
   isGenerating,
   progress,
@@ -54,7 +88,8 @@ export default function CurriculumGenerationProgress({
   curriculumType,
   sessionCount,
   error,
-  onRetry
+  onRetry,
+  isFromPrompt = false
 }: GenerationProgressProps) {
   const [currentStage, setCurrentStage] = useState<typeof stage>('analyzing')
   const [stageProgress, setStageProgress] = useState(0)
@@ -117,6 +152,7 @@ export default function CurriculumGenerationProgress({
     return null
   }
 
+  const stageInfo = isFromPrompt ? promptStageInfo : profileStageInfo
   const currentStageInfo = stageInfo[currentStage]
 
   return (

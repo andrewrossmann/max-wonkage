@@ -96,6 +96,30 @@ export default function OnboardingPage() {
   const [customPrompt, setCustomPrompt] = useState<string>('')
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false)
   const [showPromptStep, setShowPromptStep] = useState(false)
+  
+  // Test data state
+  const [useTestData, setUseTestData] = useState(false)
+  
+  // Test data for quick testing
+  const testData: OnboardingData = {
+    personalBackground: {
+      background: 'I am a software developer with 3 years of experience in web development, primarily working with React and Node.js. I have a computer science degree and enjoy building full-stack applications.',
+      interests: 'Web development, machine learning, data science, mobile app development, open source projects, and continuous learning',
+      experiences: 'Built several web applications using React, Node.js, and PostgreSQL. Contributed to open source projects and participated in hackathons. Have experience with cloud platforms like AWS and Heroku.',
+      goals: 'I want to become a senior full-stack developer and eventually transition into a technical leadership role. I also want to learn more about AI/ML and how to integrate it into web applications.'
+    },
+    timeAvailability: {
+      totalWeeks: 6,
+      sessionsPerWeek: 4,
+      sessionLength: 45
+    },
+    subject: {
+      topic: 'Advanced JavaScript and Modern Web Development',
+      skillLevel: 'intermediate',
+      goals: 'Master advanced JavaScript concepts, learn modern frameworks like Next.js and Vue.js, understand performance optimization, and build scalable web applications',
+      interests: ['JavaScript', 'React', 'Node.js', 'TypeScript', 'Web Performance', 'Testing']
+    }
+  }
 
   const steps = [
     { id: 1, title: 'Choose Subject', icon: BookOpen },
@@ -358,6 +382,7 @@ export default function OnboardingPage() {
 
     try {
       setIsGeneratingPrompt(true)
+      
       const userProfile = {
         name: user.user_metadata?.first_name || 'User',
         background: data.personalBackground.background,
@@ -380,7 +405,7 @@ export default function OnboardingPage() {
           userId: user.id
         })
       })
-
+      
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.error || 'Failed to generate prompt')
@@ -392,7 +417,7 @@ export default function OnboardingPage() {
       setCurrentStep(6)
     } catch (error) {
       console.error('Error generating prompt:', error)
-      // TODO: Show error message to user
+      alert(`Error generating prompt: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setIsGeneratingPrompt(false)
     }
@@ -479,6 +504,35 @@ export default function OnboardingPage() {
     }))
   }
 
+  const toggleTestData = () => {
+    if (useTestData) {
+      // Clear test data
+      setData({
+        personalBackground: {
+          background: '',
+          interests: '',
+          experiences: '',
+          goals: ''
+        },
+        timeAvailability: {
+          totalWeeks: 4,
+          sessionsPerWeek: 5,
+          sessionLength: 60
+        },
+        subject: {
+          topic: '',
+          skillLevel: 'beginner',
+          goals: '',
+          interests: []
+        }
+      })
+    } else {
+      // Load test data
+      setData(testData)
+    }
+    setUseTestData(!useTestData)
+  }
+
   // Show loading state when loading curriculum for editing
   if (loadingCurriculum) {
     return (
@@ -503,8 +557,23 @@ export default function OnboardingPage() {
             <div onClick={() => router.push('/')} className="cursor-pointer">
               <Logo showText={true} size={32} />
             </div>
-            <div className="text-sm text-gray-600">
-              {isEditMode ? 'Edit Curriculum' : `Step ${currentStep} of 6`}
+            <div className="flex items-center space-x-4">
+              <div className="text-sm text-gray-600">
+                {isEditMode ? 'Edit Curriculum' : `Step ${currentStep} of 6`}
+              </div>
+              {/* Test Data Toggle - Only show in development */}
+              {process.env.NODE_ENV === 'development' && (
+                <button
+                  onClick={toggleTestData}
+                  className={`px-3 py-1 text-xs rounded-full border transition-colors ${
+                    useTestData 
+                      ? 'bg-yellow-100 text-yellow-800 border-yellow-300' 
+                      : 'bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200'
+                  }`}
+                >
+                  {useTestData ? 'Test Data ON' : 'Load Test Data'}
+                </button>
+              )}
             </div>
           </div>
         </div>

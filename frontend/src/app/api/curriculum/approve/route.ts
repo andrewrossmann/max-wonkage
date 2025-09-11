@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
             title: detailedSession.title,
             description: detailedSession.description,
             content: detailedSession,
-            duration_minutes: curriculum.time_availability.session_length,
+            duration_minutes: curriculum.time_availability.sessionLength || curriculum.time_availability.session_length,
             session_format: detailedSession,
             ai_essay: detailedSession.ai_essay,
             estimated_reading_time: estimatedReadingTime,

@@ -126,21 +126,28 @@ Create a detailed, well-structured prompt that:
 
 The prompt should be comprehensive yet concise, and ready to be used directly with an AI curriculum generation system.`
 
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4',
+      // Add timeout to prevent long waits
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Request timeout - please try again')), 30000) // 30 second timeout
+      })
+
+      const responsePromise = openai.chat.completions.create({
+        model: 'gpt-4o',
         messages: [
           {
             role: 'system',
-            content: 'You are an expert curriculum designer. Create detailed, well-structured prompts for AI curriculum generation systems. Focus on clarity, specificity, and actionable instructions.'
+            content: 'You are an expert curriculum designer and educational consultant with decades of experience in creating personalized learning experiences. Create comprehensive, detailed prompts for AI curriculum generation systems that are rich in context, specific in instructions, and designed to produce high-quality, personalized curricula. Focus on clarity, specificity, actionable instructions, and pedagogical best practices.'
           },
           {
             role: 'user',
             content: prompt
           }
         ],
+        max_tokens: 2000,
         temperature: 0.7,
-        max_tokens: 1000,
       })
+
+      const response = await Promise.race([responsePromise, timeoutPromise]) as any
 
       const content = response.choices[0]?.message?.content
       if (!content) {
@@ -159,8 +166,7 @@ The prompt should be comprehensive yet concise, and ready to be used directly wi
     const { timeAvailability, personalBackground } = userProfile
     
     // Calculate total available sessions
-    // Limit total sessions to 10 for better generation quality
-    const totalSessions = Math.min(10, timeAvailability.totalWeeks * timeAvailability.sessionsPerWeek)
+    const totalSessions = timeAvailability.totalWeeks * timeAvailability.sessionsPerWeek
     const totalHours = (totalSessions * timeAvailability.sessionLength) / 60
     
     // Determine curriculum type based on session count
@@ -175,40 +181,94 @@ The prompt should be comprehensive yet concise, and ready to be used directly wi
     if (timeAvailability.sessionLength <= 30) contentDensity = 'light'
     else if (timeAvailability.sessionLength >= 75) contentDensity = 'intensive'
     
-    const prompt = `Create a personalized ${userProfile.subject} curriculum.
+    const prompt = `Create a comprehensive, personalized ${userProfile.subject} curriculum for ${userProfile.skillLevel} level learners.
 
-USER: ${userProfile.name || 'User'} - ${userProfile.skillLevel} level
-GOALS: ${userProfile.goals}
-BACKGROUND: ${personalBackground.background}
-SESSIONS: ${totalSessions} sessions of ${timeAvailability.sessionLength} minutes each
-TYPE: ${curriculumType} curriculum
+LEARNER PROFILE:
+- Name: ${userProfile.name || 'User'}
+- Learning Goals: ${userProfile.goals}
+- Background: ${personalBackground.background}
+- Interests: ${personalBackground.interests}
+- Relevant Experience: ${personalBackground.experiences}
+- Aspirations: ${personalBackground.goals}
 
-RESPOND WITH ONLY VALID JSON - NO OTHER TEXT:
+CURRICULUM SPECIFICATIONS:
+- Total Sessions: ${totalSessions} sessions
+- Session Duration: ${timeAvailability.sessionLength} minutes each
+- Total Learning Time: ${totalHours.toFixed(1)} hours
+- Curriculum Type: ${curriculumType}
+- Content Density: ${contentDensity}
+- Learning Pace: ${timeAvailability.sessionsPerWeek} sessions per week over ${timeAvailability.totalWeeks} weeks
 
+CURRICULUM REQUIREMENTS:
+1. Create exactly ${totalSessions} sessions that progressively build knowledge and skills
+2. Each session should be practical, engaging, and directly applicable to real-world scenarios
+3. Incorporate the learner's background, interests, and goals to make content personally relevant
+4. Include a mix of theoretical understanding and hands-on practice
+5. Design sessions that build upon previous knowledge with clear learning progression
+6. Include diverse learning activities: readings, exercises, projects, discussions, and assessments
+7. Ensure each session has clear learning objectives and measurable outcomes
+8. Adapt content complexity to ${userProfile.skillLevel} level while maintaining challenge and engagement
+9. Include detailed explanations, examples, and step-by-step instructions
+10. Provide comprehensive resources and reference materials for each session
+11. Design interactive elements and practical exercises that reinforce learning
+12. Include real-world case studies and practical applications relevant to the learner's goals
+13. Ensure each session builds confidence and provides clear next steps
+14. Include assessment methods and progress tracking elements
+15. Make content engaging and motivating to maintain learner interest throughout the program
+
+RESPOND WITH ONLY VALID JSON:
 {
   "curriculum_overview": {
-    "title": "Curriculum Title",
-    "description": "Description",
+    "title": "Personalized ${userProfile.subject} Mastery Program",
+    "description": "A comprehensive, structured learning journey designed specifically for ${userProfile.skillLevel} level learners with ${personalBackground.background} background, focusing on ${userProfile.goals}",
     "total_sessions": ${totalSessions},
     "total_estimated_hours": ${totalHours.toFixed(1)},
     "curriculum_type": "${curriculumType}",
     "content_density_profile": "${contentDensity}",
-    "learning_objectives": ["objective1", "objective2"],
-    "prerequisites": ["prerequisite1"],
-    "target_audience": "Target audience",
-    "key_topics": ["topic1", "topic2"]
+    "learning_objectives": ["Master fundamental concepts", "Apply practical skills", "Build real-world competency", "Develop confidence and expertise"],
+    "prerequisites": ["Basic understanding of the subject area", "Commitment to regular practice"],
+    "target_audience": "${userProfile.skillLevel} level learners with interest in ${personalBackground.interests}",
+    "key_topics": ["Core Fundamentals", "Practical Applications", "Advanced Techniques", "Real-world Projects"]
   },
   "session_list": [
     {
       "session_number": 1,
-      "title": "Session Title",
-      "description": "Session description",
-      "learning_objectives": ["objective1"],
-      "key_concepts": ["concept1"],
-      "activities": ["activity1"],
-      "resources": ["resource1"],
+      "title": "Introduction to ${userProfile.subject}: Foundations and Overview",
+      "description": "Begin your ${userProfile.subject} journey with a comprehensive overview of core concepts, key terminology, and practical applications. This session establishes the foundation for all subsequent learning, providing you with a solid understanding of the subject matter and how it applies to your specific goals and background.",
+      "learning_objectives": [
+        "Understand fundamental concepts and principles of ${userProfile.subject}",
+        "Identify key terminology and methodologies used in the field",
+        "Set personal learning goals aligned with your aspirations",
+        "Connect theoretical knowledge to real-world applications",
+        "Develop a clear roadmap for your learning journey",
+        "Build confidence in your ability to master the subject"
+      ],
+      "key_concepts": [
+        "Core principles and foundational theories",
+        "Essential terminology and definitions",
+        "Basic methodologies and approaches",
+        "Practical applications and use cases",
+        "Industry standards and best practices",
+        "Common challenges and how to overcome them"
+      ],
+      "activities": [
+        "Interactive concept mapping and visualization",
+        "Hands-on exercises and practical demonstrations",
+        "Goal setting workshop and personal reflection",
+        "Real-world case study analysis and discussion",
+        "Peer learning and knowledge sharing",
+        "Self-assessment and progress evaluation"
+      ],
+      "resources": [
+        "Comprehensive study guide and reference materials",
+        "Interactive tutorials and multimedia content",
+        "Practice exercises and assessment tools",
+        "Additional reading materials and external resources",
+        "Video demonstrations and expert interviews",
+        "Community forums and discussion groups"
+      ],
       "estimated_duration": ${timeAvailability.sessionLength},
-      "difficulty_level": "beginner",
+      "difficulty_level": "${userProfile.skillLevel}",
       "session_type": "overview"
     }
   ]
@@ -265,41 +325,38 @@ Return a JSON object with all session components properly structured and scaled.
       const prompt = request.customPrompt || await this.generateCurriculumPrompt(request)
       
       const systemMessage = request.customPrompt 
-        ? `You are an expert curriculum designer. You MUST respond with ONLY valid JSON in the exact format specified below. Do not include any comments, explanations, or text outside the JSON object. The response must start with { and end with }.
+        ? `You are an expert curriculum designer and educational consultant with extensive experience in creating personalized learning experiences. Your task is to generate a comprehensive curriculum based on the provided custom prompt. 
 
-REQUIRED JSON FORMAT:
-{
-  "curriculum_overview": {
-    "title": "Curriculum Title",
-    "description": "Description",
-    "total_sessions": number,
-    "total_estimated_hours": number,
-    "curriculum_type": "crash_course|standard|comprehensive|mastery",
-    "content_density_profile": "light|moderate|intensive",
-    "learning_objectives": ["objective1", "objective2"],
-    "prerequisites": ["prerequisite1"],
-    "target_audience": "Target audience",
-    "key_topics": ["topic1", "topic2"]
-  },
-  "session_list": [
-    {
-      "session_number": 1,
-      "title": "Session Title",
-      "description": "Session description",
-      "learning_objectives": ["objective1"],
-      "key_concepts": ["concept1"],
-      "activities": ["activity1"],
-      "resources": ["resource1"],
-      "estimated_duration": number,
-      "difficulty_level": "beginner|intermediate|advanced",
-      "session_type": "overview|practice|project|review"
-    }
-  ]
-}`
-        : 'You are an expert curriculum designer. You MUST respond with ONLY valid JSON. Do not include any comments, explanations, or text outside the JSON object. The response must start with { and end with }.'
+CRITICAL REQUIREMENTS:
+- Respond with ONLY valid JSON in the exact format specified
+- Create the exact number of sessions specified in the prompt
+- Each session must include: session_number, title, description, learning_objectives, key_concepts, activities, resources, estimated_duration, difficulty_level, session_type
+- Ensure all content is practical, engaging, and directly applicable to real-world scenarios
+- Make the curriculum personally relevant to the learner's background and goals
+- Design progressive learning that builds upon previous knowledge
+- Include diverse learning activities and clear learning objectives`
+        : `You are an expert curriculum designer and educational consultant with decades of experience in creating personalized learning experiences. Your expertise spans multiple disciplines and learning methodologies, enabling you to design curricula that are both comprehensive and engaging.
 
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4',
+CORE PRINCIPLES:
+- Create curricula that are personally relevant and engaging for each learner
+- Design progressive learning that builds knowledge systematically
+- Incorporate diverse learning activities: theoretical understanding, hands-on practice, real-world applications
+- Ensure each session has clear learning objectives and measurable outcomes
+- Adapt content complexity to the learner's skill level while maintaining appropriate challenge
+- Focus on practical skills and real-world applicability
+
+RESPONSE FORMAT:
+- Respond with ONLY valid JSON in the exact format specified
+- Create the exact number of sessions specified in the prompt
+- Ensure comprehensive, detailed content that provides genuine value to learners`
+
+      // Add timeout to prevent long waits
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Request timeout - please try again')), 60000) // 60 second timeout for curriculum generation
+      })
+
+      const responsePromise = openai.chat.completions.create({
+        model: 'gpt-4o',
         messages: [
           {
             role: 'system',
@@ -310,9 +367,11 @@ REQUIRED JSON FORMAT:
             content: prompt
           }
         ],
+        max_tokens: 4000,
         temperature: 0.7,
-        max_tokens: 4096,
       })
+
+      const response = await Promise.race([responsePromise, timeoutPromise]) as any
 
       const content = response.choices[0]?.message?.content
       if (!content) {
@@ -332,8 +391,47 @@ REQUIRED JSON FORMAT:
       
       console.log('Extracted JSON content:', jsonContent.substring(0, 200) + '...')
 
-      // Parse the JSON response directly
-      const curriculum = JSON.parse(jsonContent) as GeneratedCurriculum
+      // Parse the JSON response
+      let parsedResponse = JSON.parse(jsonContent)
+      
+      // Handle different response formats
+      let curriculum: GeneratedCurriculum
+      if (parsedResponse.curriculum_overview && parsedResponse.session_list) {
+        // Standard format
+        curriculum = parsedResponse as GeneratedCurriculum
+      } else if (parsedResponse.curriculum && Array.isArray(parsedResponse.curriculum)) {
+        // Alternative format with curriculum array
+        const sessions = parsedResponse.curriculum
+        curriculum = {
+          curriculum_overview: {
+            title: `${userProfile.subject} Curriculum`,
+            description: `A comprehensive ${userProfile.subject} learning program`,
+            total_sessions: sessions.length,
+            total_estimated_hours: (sessions.length * userProfile.timeAvailability.sessionLength) / 60,
+            curriculum_type: 'standard',
+            content_density_profile: 'moderate',
+            learning_objectives: ['Master key concepts', 'Apply practical skills'],
+            prerequisites: ['Basic understanding'],
+            target_audience: `${userProfile.skillLevel} level learners`,
+            key_topics: sessions.map((s: any) => s.title || s.topic).filter(Boolean)
+          },
+          session_list: sessions.map((session: any, index: number) => ({
+            session_number: session.session_number || index + 1,
+            title: session.title || `Session ${index + 1}`,
+            description: session.description || 'Learning session',
+            learning_objectives: session.learning_objectives || ['Learn key concepts'],
+            key_concepts: session.key_concepts || ['Core concepts'],
+            activities: session.activities || ['Practice exercises'],
+            resources: session.resources || ['Study materials'],
+            estimated_duration: session.estimated_duration || userProfile.timeAvailability.sessionLength,
+            difficulty_level: session.difficulty_level || userProfile.skillLevel,
+            session_type: session.session_type || 'overview'
+          }))
+        }
+      } else {
+        console.error('Unexpected response format:', parsedResponse)
+        throw new Error('Invalid curriculum structure generated')
+      }
       
       // Validate the response
       if (!curriculum.curriculum_overview || !curriculum.session_list) {
@@ -374,8 +472,8 @@ REQUIRED JSON FORMAT:
             content: prompt
           }
         ],
+        max_tokens: 2000,
         temperature: 0.7,
-        max_tokens: 4096,
       })
 
       const content = response.choices[0]?.message?.content

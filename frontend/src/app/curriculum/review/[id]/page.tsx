@@ -65,6 +65,38 @@ export default function CurriculumReviewPage({ params }: { params: Promise<{ id:
 
       console.log('Curriculum loaded successfully:', data.title)
 
+      // Load generated sessions if they exist
+      const { data: sessions, error: sessionsError } = await supabase
+        .from('learning_sessions')
+        .select('*')
+        .eq('curriculum_id', resolvedParams.id)
+        .order('session_number')
+
+      if (sessionsError) {
+        console.error('Error loading sessions:', sessionsError)
+      } else if (sessions && sessions.length > 0) {
+        console.log('Loaded sessions:', sessions.length)
+        // Add sessions to curriculum data
+        data.curriculum_data = {
+          ...data.curriculum_data,
+          session_list: sessions.map(session => ({
+            ...session.content,
+            id: session.id,
+            session_number: session.session_number,
+            title: session.title,
+            description: session.description,
+            estimated_reading_time: session.estimated_reading_time,
+            recommended_readings: session.resources?.recommended_readings || [],
+            case_studies: session.resources?.case_studies || [],
+            video_resources: session.resources?.video_resources || [],
+            discussion_prompts: session.discussion_prompts || [],
+            ai_essay: session.ai_essay,
+            content_density: session.content_density,
+            session_type: session.session_type
+          }))
+        }
+      }
+
       setCurriculum(data)
       setHasLoaded(true)
 
@@ -151,8 +183,12 @@ export default function CurriculumReviewPage({ params }: { params: Promise<{ id:
       const result = await response.json()
       console.log('Curriculum approved:', result)
 
-      // Redirect to dashboard
-      router.push('/dashboard')
+      // Reload curriculum to get the generated sessions
+      await loadCurriculum()
+      
+      // Show success message and stay on page to allow downloads
+      setError(null)
+      setIsGenerating(false)
     } catch (err) {
       console.error('Error approving curriculum:', err)
       setError(err instanceof Error ? err.message : 'Failed to approve curriculum')
@@ -249,7 +285,7 @@ export default function CurriculumReviewPage({ params }: { params: Promise<{ id:
               <Logo showText={true} size={32} />
             </div>
             <div className="text-sm text-gray-600">
-              Curriculum Review
+              Syllabus Review
             </div>
           </div>
         </div>
@@ -266,6 +302,7 @@ export default function CurriculumReviewPage({ params }: { params: Promise<{ id:
             sessionCount={curriculum.session_count}
             error={error}
             onRetry={handleRetry}
+            isFromPrompt={true}
           />
         ) : (
           <CurriculumReview

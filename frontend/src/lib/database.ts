@@ -10,9 +10,11 @@ export interface UserProfile {
 }
 
 export interface TimeAvailability {
-  totalDays: number
+  totalWeeks: number
   sessionsPerWeek: number
   sessionLength: number
+  // Legacy support for totalDays (if it exists in older records)
+  totalDays?: number
 }
 
 export interface PersonalBackground {
