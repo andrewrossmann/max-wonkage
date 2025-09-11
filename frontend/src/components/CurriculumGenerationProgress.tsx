@@ -29,10 +29,10 @@ const profileStageInfo = {
     duration: 1500
   },
   generating: {
-    title: 'Generating Curriculum Content',
-    description: 'Creating personalized learning materials and session outlines...',
+    title: 'Generating Syllabus',
+    description: 'Creating session titles and learning structure...',
     icon: '🤖',
-    duration: 3000
+    duration: 2000
   },
   structuring: {
     title: 'Structuring Sessions',
@@ -62,10 +62,10 @@ const promptStageInfo = {
     duration: 1500
   },
   generating: {
-    title: 'Generating Curriculum Content',
-    description: 'Creating learning materials based on your specifications...',
+    title: 'Generating Syllabus',
+    description: 'Creating session titles and learning structure...',
     icon: '🤖',
-    duration: 3000
+    duration: 2000
   },
   structuring: {
     title: 'Structuring Learning Sessions',
@@ -267,7 +267,7 @@ export default function CurriculumGenerationProgress({
 
         {/* Estimated Time */}
         <div className="text-xs text-gray-500 mt-4">
-          This usually takes 30-60 seconds
+          This usually takes 10-30 seconds for syllabus generation
         </div>
       </motion.div>
     </div>

@@ -1355,11 +1355,11 @@ function PromptReviewStep({ prompt, onPromptChange, onComplete, onBack, isGenera
           {isGenerating ? (
             <>
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-black"></div>
-              <span>Generating Curriculum...</span>
+              <span>Generating Syllabus...</span>
             </>
           ) : (
             <>
-              <span>Generate My Curriculum →</span>
+                <span>Generate My Syllabus →</span>
             </>
           )}
         </button>

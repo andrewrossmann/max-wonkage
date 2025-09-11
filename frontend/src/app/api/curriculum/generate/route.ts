@@ -90,16 +90,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Calculate total estimated hours and curriculum type
-    const totalHours = curriculum.curriculum_overview.total_estimated_hours
+    // Calculate total sessions for logging
     const totalSessions = curriculum.curriculum_overview.total_sessions || curriculum.session_list.length
-    
-    // Determine curriculum type based on session count (same logic as AI generator)
-    let curriculumType = 'standard'
-    if (totalSessions <= 5) curriculumType = 'crash_course'
-    else if (totalSessions <= 15) curriculumType = 'standard'
-    else if (totalSessions <= 30) curriculumType = 'comprehensive'
-    else curriculumType = 'mastery'
+    console.log('Generated curriculum with', totalSessions, 'sessions')
 
     // Create curriculum record in database using user-specific client for RLS
     console.log('Attempting to insert curriculum with userId:', userId)
@@ -114,25 +107,7 @@ export async function POST(request: NextRequest) {
         personal_background: userProfile.personalBackground,
         time_availability: userProfile.timeAvailability,
         curriculum_data: curriculum,
-        syllabus_data: curriculum.curriculum_overview,
-        generation_prompt: JSON.stringify({
-          userProfile,
-          customPrompt: customPrompt || null,
-          timestamp: new Date().toISOString()
-        }),
-        generation_metadata: {
-          model: 'gpt-4',
-          generated_at: new Date().toISOString(),
-          total_sessions: totalSessions,
-          curriculum_type: curriculumType,
-          content_density: curriculum.curriculum_overview.content_density_profile || 'moderate'
-        },
-        approval_status: 'pending',
-        curriculum_type: curriculumType,
-        total_estimated_hours: totalHours,
-        session_count: totalSessions,
-        average_session_length: userProfile.timeAvailability.sessionLength,
-        status: 'pending_approval'
+        status: 'active'
       })
       .select()
       .single()
