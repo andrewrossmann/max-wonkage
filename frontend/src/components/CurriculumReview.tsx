@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { 
@@ -33,6 +34,7 @@ export default function CurriculumReview({
   onCustomize,
   isProcessing = false
 }: CurriculumReviewProps) {
+  const router = useRouter()
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['overview']))
   const [customizations, setCustomizations] = useState<any>({})
   const [rejectReason, setRejectReason] = useState('')
@@ -68,6 +70,11 @@ export default function CurriculumReview({
     if (rejectReason.trim()) {
       onReject(rejectReason)
     }
+  }
+
+  const handleReviseSyllabus = () => {
+    // Navigate to onboarding page with edit mode and curriculum ID
+    router.push(`/onboarding?edit=${curriculum.id}`)
   }
 
   const downloadSession = async (sessionId: string, sessionTitle: string, sessionNumber: number) => {
@@ -275,12 +282,12 @@ export default function CurriculumReview({
         {!showRejectForm ? (
           <>
             <button
-              onClick={() => setShowRejectForm(true)}
+              onClick={handleReviseSyllabus}
               disabled={isProcessing}
               className="flex items-center space-x-2 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              <XCircle className="w-5 h-5" />
-              <span>Request Changes</span>
+              <Edit3 className="w-5 h-5" />
+              <span>Revise Syllabus</span>
             </button>
             <button
               onClick={handleApprove}

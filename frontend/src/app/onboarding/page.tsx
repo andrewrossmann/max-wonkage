@@ -77,6 +77,7 @@ export default function OnboardingPage() {
   const [isEditMode, setIsEditMode] = useState(false)
   const [editingCurriculum, setEditingCurriculum] = useState<Curriculum | null>(null)
   const [loadingCurriculum, setLoadingCurriculum] = useState(false)
+  const [isRedirecting, setIsRedirecting] = useState(false)
   
   // Voice input state
   const [isListening, setIsListening] = useState(false)
@@ -94,8 +95,10 @@ export default function OnboardingPage() {
   
   // Prompt generation state
   const [customPrompt, setCustomPrompt] = useState<string>('')
+  const [originalPrompt, setOriginalPrompt] = useState<string>('')
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false)
   const [showPromptStep, setShowPromptStep] = useState(false)
+  const [hasPromptBeenEdited, setHasPromptBeenEdited] = useState(false)
   
   // Test data state
   const [useTestData, setUseTestData] = useState(false)
@@ -133,11 +136,11 @@ export default function OnboardingPage() {
   // Check for edit mode and load curriculum data
   useEffect(() => {
     const editId = searchParams.get('edit')
-    if (editId && user) {
+    if (editId && user && !isRedirecting) {
       setIsEditMode(true)
       loadCurriculumForEdit(editId)
     }
-  }, [searchParams, user])
+  }, [searchParams, user, isRedirecting])
 
   // Load curriculum data for editing
   const loadCurriculumForEdit = async (curriculumId: string) => {
@@ -161,6 +164,18 @@ export default function OnboardingPage() {
             interests: [] // This would need to be stored separately or extracted from goals
           }
         })
+        
+        // Load the custom prompt if it exists
+        if ((curriculum as any).generation_prompt) {
+          const prompt = (curriculum as any).generation_prompt
+          setCustomPrompt(prompt)
+          setOriginalPrompt(prompt) // Store the original prompt
+          setHasPromptBeenEdited(false) // Reset edit tracking
+        }
+        
+        // Always go to step 6 (prompt review) when revising syllabus
+        setShowPromptStep(true)
+        setCurrentStep(6)
       } else {
         console.error('Curriculum not found')
         router.push('/dashboard')
@@ -415,6 +430,11 @@ export default function OnboardingPage() {
       setCustomPrompt(result.prompt)
       setShowPromptStep(true)
       setCurrentStep(6)
+      
+      // If in edit mode, we're done - user can now edit the prompt
+      if (isEditMode) {
+        return
+      }
     } catch (error) {
       console.error('Error generating prompt:', error)
       alert(`Error generating prompt: ${error instanceof Error ? error.message : 'Unknown error'}`)
@@ -432,24 +452,56 @@ export default function OnboardingPage() {
     
     try {
       if (isEditMode && editingCurriculum) {
-        // Update existing curriculum
+        // Check if the prompt has been edited
+        if (!hasPromptBeenEdited) {
+          // No edits made, just redirect back to the original curriculum
+          console.log('No prompt edits detected, redirecting to original curriculum')
+          router.push(`/curriculum/review/${editingCurriculum.id}`)
+          return
+        }
+
+        // Prompt has been edited, generate a new curriculum
+        console.log('Prompt has been edited, generating new curriculum')
         setIsGenerating(true)
-        const updatedCurriculum = await updateCurriculum(editingCurriculum.id, {
-          title: data.subject.topic,
+        const userProfile = {
+          name: user.user_metadata?.first_name || 'User',
+          background: data.personalBackground.background,
+          currentRole: 'Professional',
+          skillLevel: data.subject.skillLevel,
           subject: data.subject.topic,
-          skill_level: data.subject.skillLevel,
           goals: data.subject.goals,
-          personal_background: data.personalBackground,
-          time_availability: data.timeAvailability,
-          status: 'active' // Reset to active when editing
+          timeAvailability: data.timeAvailability,
+          personalBackground: data.personalBackground
+        }
+
+        // Call AI generation API to create new curriculum
+        console.log('Making API call with token:', session.access_token ? 'present' : 'missing')
+        const response = await fetch('/api/curriculum/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            userProfile,
+            userId: user.id,
+            customPrompt: customPrompt || undefined
+          })
         })
 
-        if (updatedCurriculum) {
-          console.log('Curriculum updated:', updatedCurriculum)
-          router.push('/dashboard')
-        } else {
-          console.error('Failed to update curriculum')
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Failed to generate curriculum')
         }
+
+        const result = await response.json()
+        console.log('AI curriculum generated:', result)
+        
+        // Reset loading state
+        setIsGenerating(false)
+        
+        // Redirect to curriculum review page
+        router.push(`/curriculum/review/${result.curriculum.id}`)
       } else {
         // Generate AI curriculum
         setIsGenerating(true)
@@ -487,6 +539,9 @@ export default function OnboardingPage() {
         const result = await response.json()
         console.log('AI curriculum generated:', result)
         
+        // Reset loading state
+        setIsGenerating(false)
+        
         // Redirect to curriculum review page
         router.push(`/curriculum/review/${result.curriculum.id}`)
       }
@@ -502,6 +557,23 @@ export default function OnboardingPage() {
       ...prev,
       [section]: { ...prev[section], ...updates }
     }))
+  }
+
+  const handlePromptChange = (newPrompt: string) => {
+    setCustomPrompt(newPrompt)
+    // Check if the prompt has been edited from the original
+    if (isEditMode && originalPrompt) {
+      setHasPromptBeenEdited(newPrompt !== originalPrompt)
+    }
+  }
+
+  const handleReturnToOriginal = () => {
+    if (isEditMode && editingCurriculum) {
+      // Set redirecting flag to prevent loading curriculum again
+      setIsRedirecting(true)
+      // Direct redirect without any loading state
+      router.push(`/curriculum/review/${editingCurriculum.id}`)
+    }
   }
 
   const toggleTestData = () => {
@@ -711,10 +783,14 @@ export default function OnboardingPage() {
             {currentStep === 6 && (
               <PromptReviewStep 
                 prompt={customPrompt}
-                onPromptChange={setCustomPrompt}
+                onPromptChange={handlePromptChange}
                 onComplete={handleComplete}
+                onReturnToOriginal={handleReturnToOriginal}
                 onBack={() => setCurrentStep(5)}
                 isGenerating={isGenerating}
+                isEditMode={isEditMode}
+                hasPromptBeenEdited={hasPromptBeenEdited}
+                originalPrompt={originalPrompt}
               />
             )}
           </motion.div>
@@ -1266,18 +1342,19 @@ function ReviewStep({ data, onComplete, onEditStep, onGeneratePrompt, isEditMode
         </button>
         {isEditMode ? (
           <button
-            onClick={onComplete}
-            disabled={isGenerating}
-            className="px-8 py-3 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+            onClick={onGeneratePrompt}
+            disabled={isGeneratingPrompt}
+            className="px-8 py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
           >
-            {isGenerating ? (
+            {isGeneratingPrompt ? (
               <>
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-black"></div>
-                <span>Updating...</span>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                <span>Generating Prompt...</span>
               </>
             ) : (
               <>
-                <span>Update My Curriculum →</span>
+                <Edit3 className="w-4 h-4" />
+                <span>Update Custom AI Prompt →</span>
               </>
             )}
           </button>
@@ -1305,12 +1382,16 @@ function ReviewStep({ data, onComplete, onEditStep, onGeneratePrompt, isEditMode
   )
 }
 
-function PromptReviewStep({ prompt, onPromptChange, onComplete, onBack, isGenerating }: { 
+function PromptReviewStep({ prompt, onPromptChange, onComplete, onReturnToOriginal, onBack, isGenerating, isEditMode, hasPromptBeenEdited, originalPrompt }: { 
   prompt: string, 
   onPromptChange: (prompt: string) => void, 
   onComplete: () => void, 
+  onReturnToOriginal: () => void,
   onBack: () => void, 
-  isGenerating: boolean 
+  isGenerating: boolean,
+  isEditMode: boolean,
+  hasPromptBeenEdited: boolean,
+  originalPrompt: string
 }) {
   return (
     <div>
@@ -1319,6 +1400,29 @@ function PromptReviewStep({ prompt, onPromptChange, onComplete, onBack, isGenera
         Review and edit the AI prompt that will be used to generate your curriculum. 
         You can modify it to better reflect your specific needs and preferences.
       </p>
+      
+      {/* Edit status indicator */}
+      {isEditMode && (
+        <div className={`mb-6 p-4 rounded-lg border ${
+          hasPromptBeenEdited 
+            ? 'bg-blue-50 border-blue-200' 
+            : 'bg-gray-50 border-gray-200'
+        }`}>
+          <div className="flex items-center space-x-2">
+            <div className={`w-3 h-3 rounded-full ${
+              hasPromptBeenEdited ? 'bg-blue-500' : 'bg-gray-400'
+            }`}></div>
+            <span className={`text-sm font-medium ${
+              hasPromptBeenEdited ? 'text-blue-700' : 'text-gray-600'
+            }`}>
+              {hasPromptBeenEdited 
+                ? 'Prompt has been modified - will generate new syllabus' 
+                : 'No changes detected - will return to original syllabus'
+              }
+            </span>
+          </div>
+        </div>
+      )}
       
       <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
         <div className="p-6">
@@ -1332,10 +1436,20 @@ function PromptReviewStep({ prompt, onPromptChange, onComplete, onBack, isGenera
             className="w-full h-96 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 resize-none font-mono text-sm"
             placeholder="Your AI prompt will appear here..."
           />
-          <p className="mt-2 text-sm text-gray-500">
-            This prompt will be used by the AI to generate your personalized curriculum. 
-            Feel free to modify it to better suit your needs.
-          </p>
+          <div className="mt-2 flex justify-between items-center">
+            <p className="text-sm text-gray-500">
+              This prompt will be used by the AI to generate your personalized curriculum. 
+              Feel free to modify it to better suit your needs.
+            </p>
+            {isEditMode && hasPromptBeenEdited && originalPrompt && (
+              <button
+                onClick={() => onPromptChange(originalPrompt)}
+                className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+              >
+                Reset to Original
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -1348,18 +1462,23 @@ function PromptReviewStep({ prompt, onPromptChange, onComplete, onBack, isGenera
           ← Back to Review
         </button>
         <button
-          onClick={onComplete}
-          disabled={isGenerating}
+          onClick={isEditMode && !hasPromptBeenEdited ? onReturnToOriginal : onComplete}
+          disabled={isGenerating && !(isEditMode && !hasPromptBeenEdited)}
           className="px-8 py-3 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
         >
-          {isGenerating ? (
+          {isGenerating && !(isEditMode && !hasPromptBeenEdited) ? (
             <>
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-black"></div>
               <span>Generating Syllabus...</span>
             </>
           ) : (
             <>
-                <span>Generate My Syllabus →</span>
+              <span>
+                {isEditMode 
+                  ? (hasPromptBeenEdited ? 'Generate New Syllabus →' : 'Return to Original Syllabus →')
+                  : 'Generate My Syllabus →'
+                }
+              </span>
             </>
           )}
         </button>

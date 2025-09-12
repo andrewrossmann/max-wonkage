@@ -107,6 +107,7 @@ export async function POST(request: NextRequest) {
         personal_background: userProfile.personalBackground,
         time_availability: userProfile.timeAvailability,
         curriculum_data: curriculum,
+        generation_prompt: customPrompt, // Save the custom prompt
         status: 'active'
       })
       .select()

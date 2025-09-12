@@ -34,7 +34,17 @@ export interface Curriculum {
   personal_background: PersonalBackground
   time_availability: TimeAvailability
   curriculum_data?: any
-  status: 'active' | 'completed' | 'paused'
+  syllabus_data?: any
+  generation_prompt?: string
+  generation_metadata?: any
+  customization_notes?: string
+  approval_status?: 'pending' | 'approved' | 'rejected'
+  approved_at?: string
+  curriculum_type?: string
+  total_estimated_hours?: number
+  session_count?: number
+  average_session_length?: number
+  status: 'active' | 'completed' | 'paused' | 'rejected'
   progress: any
   created_at: string
   updated_at: string

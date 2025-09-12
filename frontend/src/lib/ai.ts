@@ -359,6 +359,35 @@ REQUIREMENTS:
             session_type: session.session_type || 'overview'
           }))
         }
+      } else if (parsedResponse.sessions && Array.isArray(parsedResponse.sessions)) {
+        // Format with sessions array
+        const sessions = parsedResponse.sessions
+        curriculum = {
+          curriculum_overview: {
+            title: `${request.userProfile.subject} Curriculum`,
+            description: `A comprehensive ${request.userProfile.subject} learning program`,
+            total_sessions: sessions.length,
+            total_estimated_hours: (sessions.length * request.userProfile.timeAvailability.sessionLength) / 60,
+            curriculum_type: 'standard',
+            content_density_profile: 'moderate',
+            learning_objectives: ['Master key concepts', 'Apply practical skills'],
+            prerequisites: ['Basic understanding'],
+            target_audience: `${request.userProfile.skillLevel} level learners`,
+            key_topics: sessions.map((s: any) => s.title || s.topic).filter(Boolean)
+          },
+          session_list: sessions.map((session: any, index: number) => ({
+            session_number: session.session_number || index + 1,
+            title: session.title || `Session ${index + 1}`,
+            description: session.description || 'Learning session',
+            learning_objectives: session.learning_objectives || ['Learn key concepts'],
+            key_concepts: session.key_concepts || ['Core concepts'],
+            activities: session.activities || ['Practice exercises'],
+            resources: session.resources || ['Study materials'],
+            estimated_duration: session.estimated_duration || request.userProfile.timeAvailability.sessionLength,
+            difficulty_level: session.difficulty_level || request.userProfile.skillLevel,
+            session_type: session.session_type || 'overview'
+          }))
+        }
       } else if (parsedResponse.curriculum && Array.isArray(parsedResponse.curriculum)) {
         // Alternative format with curriculum array
         const sessions = parsedResponse.curriculum
