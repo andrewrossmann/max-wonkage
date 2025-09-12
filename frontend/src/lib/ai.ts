@@ -335,15 +335,15 @@ REQUIREMENTS:
         const sessions = parsedResponse.syllabus
         curriculum = {
           curriculum_overview: {
-            title: parsedResponse.syllabus_overview?.title || `${userProfile.subject} Syllabus`,
-            description: parsedResponse.syllabus_overview?.description || `A structured ${userProfile.subject} learning journey`,
+            title: parsedResponse.syllabus_overview?.title || `${request.userProfile.subject} Syllabus`,
+            description: parsedResponse.syllabus_overview?.description || `A structured ${request.userProfile.subject} learning journey`,
             total_sessions: sessions.length,
-            total_estimated_hours: (sessions.length * userProfile.timeAvailability.sessionLength) / 60,
+            total_estimated_hours: (sessions.length * request.userProfile.timeAvailability.sessionLength) / 60,
             curriculum_type: 'syllabus',
             content_density_profile: 'moderate',
             learning_objectives: parsedResponse.syllabus_overview?.learning_objectives || ['Master core concepts', 'Apply practical skills'],
             prerequisites: ['Basic understanding'],
-            target_audience: parsedResponse.syllabus_overview?.target_audience || `${userProfile.skillLevel} level learners`,
+            target_audience: parsedResponse.syllabus_overview?.target_audience || `${request.userProfile.skillLevel} level learners`,
             key_topics: sessions.map((s: any) => s.title || s.topic).filter(Boolean)
           },
           session_list: sessions.map((session: any, index: number) => ({

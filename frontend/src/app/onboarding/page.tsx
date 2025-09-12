@@ -103,21 +103,21 @@ export default function OnboardingPage() {
   // Test data for quick testing
   const testData: OnboardingData = {
     personalBackground: {
-      background: 'I am a software developer with 3 years of experience in web development, primarily working with React and Node.js. I have a computer science degree and enjoy building full-stack applications.',
-      interests: 'Web development, machine learning, data science, mobile app development, open source projects, and continuous learning',
-      experiences: 'Built several web applications using React, Node.js, and PostgreSQL. Contributed to open source projects and participated in hackathons. Have experience with cloud platforms like AWS and Heroku.',
-      goals: 'I want to become a senior full-stack developer and eventually transition into a technical leadership role. I also want to learn more about AI/ML and how to integrate it into web applications.'
+      background: 'I am a 64 year old MBA with 20 years of experience building and managing a health and wellness spa. I recently became Chairman of the Board of local museums in the San Francisco Bay Area.',
+      interests: 'I love travel, politics, history, and laughting at my own really bad puns.',
+      experiences: 'I like building teams and bringing people together. I have no interest in learning to code, but I would like to be able to apply AI strategically in my non-profit work. I have used chatGPT but that is as far as I have gotten.',
+      goals: 'I feel like I have been falling behind in technology and I want to get up to speed.'
     },
     timeAvailability: {
-      totalWeeks: 6,
-      sessionsPerWeek: 4,
+      totalWeeks: 4,
+      sessionsPerWeek: 2,
       sessionLength: 45
     },
     subject: {
-      topic: 'Advanced JavaScript and Modern Web Development',
-      skillLevel: 'intermediate',
-      goals: 'Master advanced JavaScript concepts, learn modern frameworks like Next.js and Vue.js, understand performance optimization, and build scalable web applications',
-      interests: ['JavaScript', 'React', 'Node.js', 'TypeScript', 'Web Performance', 'Testing']
+      topic: 'AI/Machine Learning',
+      skillLevel: 'beginner',
+      goals: 'become well versed in AI/ML and be able to apply it strategically in my non-profit work.',
+      interests: ['technology', 'non-profit', 'museums', 'travel', 'politics', 'history', 'puns']
     }
   }
 
