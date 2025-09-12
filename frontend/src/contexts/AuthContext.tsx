@@ -54,8 +54,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         data: {
           first_name: firstName,
           full_name: firstName
-        }
-        // Remove custom redirect - let Supabase handle it
+        },
+        emailRedirectTo: `${window.location.origin}/auth/confirm`
       }
     })
     console.log('Signup result:', { data, error })
@@ -78,7 +78,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const resendConfirmation = async (email: string) => {
     const { error } = await supabase.auth.resend({
       type: 'signup',
-      email: email
+      email: email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/confirm`
+      }
     })
     return { error }
   }

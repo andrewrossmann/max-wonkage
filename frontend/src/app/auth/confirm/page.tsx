@@ -18,54 +18,75 @@ export default function ConfirmPage() {
       const token = searchParams.get('token')
       const type = searchParams.get('type')
       const tokenHash = searchParams.get('token_hash')
+      const code = searchParams.get('code')
       
       console.log('Confirmation URL parameters:', {
         token,
         type,
         tokenHash,
-        allParams: Object.fromEntries(searchParams.entries())
+        code,
+        allParams: Object.fromEntries(searchParams.entries()),
+        currentUrl: window.location.href,
+        pathname: window.location.pathname,
+        search: window.location.search
       })
 
       // Try different approaches for email confirmation
       try {
         let result = null
 
-        // Method 1: Try with token_hash and type=email (most common)
-        if (tokenHash && type === 'email') {
-          console.log('Trying method 1: token_hash with type=email')
+        // Method 1: Try with code (most common for email confirmations)
+        if (code) {
+          console.log('Trying method 1: exchangeCodeForSession with code')
+          result = await supabase.auth.exchangeCodeForSession(code)
+        }
+        // Method 2: Try with token_hash and type=email
+        else if (tokenHash && type === 'email') {
+          console.log('Trying method 2: token_hash with type=email')
           result = await supabase.auth.verifyOtp({
             token_hash: tokenHash,
             type: 'email'
           })
         }
-        // Method 2: Try with token and type=signup
+        // Method 3: Try with token and type=signup
         else if (token && type === 'signup') {
-          console.log('Trying method 2: token with type=signup')
+          console.log('Trying method 3: token with type=signup')
           result = await supabase.auth.verifyOtp({
             token_hash: token,
             type: 'email'
           })
         }
-        // Method 3: Try with just token
+        // Method 4: Try with just token
         else if (token) {
-          console.log('Trying method 3: just token')
+          console.log('Trying method 4: just token')
           result = await supabase.auth.verifyOtp({
             token_hash: token,
             type: 'email'
           })
         }
-        // Method 4: Try with token_hash only
+        // Method 5: Try with token_hash only
         else if (tokenHash) {
-          console.log('Trying method 4: just token_hash')
+          console.log('Trying method 5: just token_hash')
           result = await supabase.auth.verifyOtp({
             token_hash: tokenHash,
             type: 'email'
           })
         }
-        // Method 5: Try exchangeCodeForSession (for email confirmations)
+        // Method 6: Try exchangeCodeForSession with token
         else if (token) {
-          console.log('Trying method 5: exchangeCodeForSession')
+          console.log('Trying method 6: exchangeCodeForSession with token')
           result = await supabase.auth.exchangeCodeForSession(token)
+        }
+        // Method 7: Try to get the current session (in case user is already confirmed)
+        else {
+          console.log('Trying method 7: check current session')
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+          if (session && !sessionError) {
+            console.log('User already has a valid session')
+            result = { data: { session }, error: null }
+          } else {
+            console.log('No valid session found')
+          }
         }
 
         if (result) {
@@ -87,6 +108,7 @@ export default function ConfirmPage() {
         } else {
           // No valid parameters found
           console.error('No valid confirmation parameters found')
+          console.error('Available parameters:', Object.fromEntries(searchParams.entries()))
           setStatus('error')
           setMessage('Invalid confirmation link. Please check your email and try again.')
           setTimeout(() => {
