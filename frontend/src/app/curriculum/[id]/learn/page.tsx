@@ -325,116 +325,185 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
             )}
           </div>
 
-          {/* Sessions List */}
-          <div className="bg-white rounded-lg shadow-lg p-8">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-semibold text-gray-900">Learning Sessions</h2>
-              <div className="text-sm text-gray-600">
-                {sessions.filter(s => s.completed).length} of {sessions.length} completed
-              </div>
-            </div>
+          {/* Two-Column Layout: Syllabus + Sessions */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Left Column: Syllabus Overview */}
+            <div className="bg-white rounded-lg shadow-lg p-8">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-6">Course Syllabus</h2>
+              
+              {curriculum.curriculum_data ? (
+                <div className="space-y-4">
+                  {/* Curriculum Overview */}
+                  {curriculum.curriculum_data.curriculum_overview && (
+                    <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                      <h3 className="font-semibold text-gray-900 mb-2">{curriculum.curriculum_data.curriculum_overview.title}</h3>
+                      <p className="text-gray-700 text-sm mb-3">{curriculum.curriculum_data.curriculum_overview.description}</p>
+                      <div className="flex flex-wrap gap-2">
+                        <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
+                          {curriculum.curriculum_data.curriculum_overview.total_sessions} sessions
+                        </span>
+                        <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                          {curriculum.curriculum_data.curriculum_overview.total_estimated_hours}h total
+                        </span>
+                        <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                          {curriculum.curriculum_data.curriculum_overview.curriculum_type}
+                        </span>
+                      </div>
+                    </div>
+                  )}
 
-            {sessions.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <BookOpen className="w-8 h-8 text-gray-600" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No Sessions Available</h3>
-                <p className="text-gray-600">This curriculum doesn't have any learning sessions yet.</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {sessions.map((session, index) => (
-                  <motion.div
-                    key={session.id}
-                    className={`border rounded-lg p-6 transition-all duration-200 ${
-                      session.completed 
-                        ? 'bg-green-50 border-green-200' 
-                        : index === currentSessionIndex
-                        ? 'bg-yellow-50 border-yellow-300 shadow-md'
-                        : 'bg-white border-gray-200 hover:border-gray-300'
-                    }`}
-                    whileHover={{ scale: 1.01 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start space-x-4 flex-1">
-                        <div className="flex-shrink-0">
-                          {session.completed ? (
-                            <CheckCircle className="w-6 h-6 text-green-600" />
-                          ) : (
-                            <Circle className="w-6 h-6 text-gray-400" />
+                  {/* Session List */}
+                  {curriculum.curriculum_data.session_list ? (
+                    <div className="space-y-3">
+                      {curriculum.curriculum_data.session_list.map((session: any, index: number) => (
+                        <div key={index} className="border-l-4 border-yellow-400 pl-4 py-2">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <span className="text-sm font-medium text-gray-600">Session {session.session_number || index + 1}</span>
+                            <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+                          </div>
+                          <h3 className="font-semibold text-gray-900 text-sm">{session.title}</h3>
+                          {session.description && (
+                            <p className="text-gray-600 text-xs mt-1">{session.description}</p>
+                          )}
+                          {session.learning_objectives && session.learning_objectives.length > 0 && (
+                            <div className="mt-2">
+                              <p className="text-xs font-medium text-gray-700 mb-1">Learning Objectives:</p>
+                              <ul className="text-xs text-gray-600 space-y-1">
+                                {session.learning_objectives.slice(0, 2).map((objective: string, objIndex: number) => (
+                                  <li key={objIndex} className="flex items-start space-x-1">
+                                    <span className="text-yellow-500 mt-0.5">•</span>
+                                    <span>{objective}</span>
+                                  </li>
+                                ))}
+                                {session.learning_objectives.length > 2 && (
+                                  <li className="text-gray-500 italic">+{session.learning_objectives.length - 2} more...</li>
+                                )}
+                              </ul>
+                            </div>
                           )}
                         </div>
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-2">
-                            <span className="text-lg font-bold text-gray-900">
-                              Session {session.session_number}
-                            </span>
-                            {session.completed && (
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <BookOpen className="w-6 h-6 text-gray-600" />
+                      </div>
+                      <p className="text-gray-600">Session list will appear here once generated</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <BookOpen className="w-6 h-6 text-gray-600" />
+                  </div>
+                  <p className="text-gray-600">Syllabus overview will appear here once generated</p>
+                </div>
+              )}
+            </div>
+
+            {/* Right Column: Individual Sessions */}
+            <div className="bg-white rounded-lg shadow-lg p-8">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-semibold text-gray-900">Learning Sessions</h2>
+                <div className="text-sm text-gray-600">
+                  {sessions.filter(s => s.completed).length} of {curriculum.time_availability.totalWeeks * curriculum.time_availability.sessionsPerWeek} completed
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {Array.from({ length: curriculum.time_availability.totalWeeks * curriculum.time_availability.sessionsPerWeek }, (_, index) => {
+                  const sessionNumber = index + 1;
+                  const existingSession = sessions.find(s => s.session_number === sessionNumber);
+                  const isCompleted = existingSession?.completed || false;
+                  const isGenerated = !!existingSession;
+                  
+                  // Get session title from syllabus data
+                  const syllabusSession = curriculum.curriculum_data?.session_list?.find((s: any) => 
+                    (s.session_number || 0) === sessionNumber || 
+                    curriculum.curriculum_data.session_list.indexOf(s) === index
+                  );
+                  const sessionTitle = syllabusSession?.title || `Session ${sessionNumber} - ${curriculum.subject}`;
+                  const sessionDescription = syllabusSession?.description;
+
+                  return (
+                    <motion.div
+                      key={sessionNumber}
+                      className={`border rounded-lg p-4 transition-all duration-200 ${
+                        isCompleted 
+                          ? 'bg-green-50 border-green-200' 
+                          : isGenerated
+                          ? 'bg-yellow-50 border-yellow-300'
+                          : 'bg-gray-50 border-gray-200'
+                      }`}
+                      whileHover={{ scale: 1.01 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <div className="flex items-center space-x-4">
+                        {/* Session Circle */}
+                        <div className="flex-shrink-0">
+                          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                            isCompleted
+                              ? 'bg-green-500 border-green-500'
+                              : isGenerated
+                              ? 'bg-yellow-500 border-yellow-500'
+                              : 'bg-white border-gray-400'
+                          }`}>
+                            {isCompleted && <CheckCircle className="w-4 h-4 text-white" />}
+                            {!isCompleted && isGenerated && <Circle className="w-4 h-4 text-white" />}
+                          </div>
+                        </div>
+
+                        {/* Session Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <span className="text-sm font-medium text-gray-600">Session {sessionNumber}</span>
+                            {isCompleted && (
                               <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
                                 Completed
                               </span>
                             )}
-                            {!session.completed && index === currentSessionIndex && (
+                            {!isCompleted && isGenerated && (
                               <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
-                                Next
+                                Ready
                               </span>
                             )}
                           </div>
-                          <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                            {session.title}
+                          <h3 className="font-semibold text-gray-900 text-sm truncate">
+                            {sessionTitle}
                           </h3>
-                          {session.description && (
-                            <p className="text-gray-700 mb-3 line-clamp-2">
-                              {session.description}
-                            </p>
+                        </div>
+
+                        {/* Action Button */}
+                        <div className="flex-shrink-0">
+                          {isGenerated ? (
+                            <button
+                              onClick={() => handleStartSession(existingSession!.id)}
+                              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-1 ${
+                                isCompleted
+                                  ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                  : 'bg-yellow-500 text-black hover:bg-yellow-600'
+                              }`}
+                            >
+                              <Play className="w-3 h-3" />
+                              <span>{isCompleted ? 'Review' : 'Start'}</span>
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => console.log(`Generate session ${sessionNumber}`)}
+                              className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+                            >
+                              Generate
+                            </button>
                           )}
-                          <div className="flex items-center space-x-6 text-sm text-gray-600">
-                            <div className="flex items-center space-x-1">
-                              <Clock className="w-4 h-4" />
-                              <span>{formatDuration(session.duration_minutes || 60)}</span>
-                            </div>
-                            {session.content?.estimated_reading_time > 0 && (
-                              <div className="flex items-center space-x-1">
-                                <BookOpen className="w-4 h-4" />
-                                <span>{session.content.estimated_reading_time} min read</span>
-                              </div>
-                            )}
-                            {session.content?.content_density && (
-                              <div className="flex items-center space-x-1">
-                                <Brain className="w-4 h-4" />
-                                <span className="capitalize">{session.content.content_density}</span>
-                              </div>
-                            )}
-                          </div>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2 ml-4">
-                        <button
-                          onClick={() => handleStartSession(session.id)}
-                          className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2 ${
-                            session.completed
-                              ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                              : 'bg-yellow-500 text-black hover:bg-yellow-600'
-                          }`}
-                        >
-                          <Play className="w-4 h-4" />
-                          <span>{session.completed ? 'Review' : 'Start'}</span>
-                        </button>
-                        <button
-                          onClick={() => handleDownloadSession(session.id, session.title, session.session_number)}
-                          className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors flex items-center space-x-2"
-                        >
-                          <Download className="w-4 h-4" />
-                          <span>Download</span>
-                        </button>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
+                    </motion.div>
+                  );
+                })}
               </div>
-            )}
+            </div>
           </div>
         </motion.div>
       </main>
