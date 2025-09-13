@@ -155,7 +155,6 @@ export default function CurriculumReviewPage({ params }: { params: Promise<{ id:
 
   const handleApprove = async (customizations?: any) => {
     try {
-      setIsGenerating(true)
       setError(null)
 
       if (!session) {
@@ -183,16 +182,11 @@ export default function CurriculumReviewPage({ params }: { params: Promise<{ id:
       const result = await response.json()
       console.log('Curriculum approved:', result)
 
-      // Reload curriculum to get the generated sessions
-      await loadCurriculum()
-      
-      // Show success message and stay on page to allow downloads
-      setError(null)
-      setIsGenerating(false)
+      // Redirect to dashboard after successful approval
+      router.push('/dashboard')
     } catch (err) {
       console.error('Error approving curriculum:', err)
       setError(err instanceof Error ? err.message : 'Failed to approve curriculum')
-      setIsGenerating(false)
     }
   }
 
@@ -310,7 +304,7 @@ export default function CurriculumReviewPage({ params }: { params: Promise<{ id:
             onApprove={handleApprove}
             onReject={handleReject}
             onCustomize={handleCustomize}
-            isProcessing={isGenerating}
+            isProcessing={false}
           />
         )}
       </main>

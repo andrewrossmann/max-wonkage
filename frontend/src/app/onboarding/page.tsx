@@ -824,7 +824,7 @@ function PersonalBackgroundStep({
   const fields = [
     {
       id: 'background',
-      label: 'Background and Experience',
+      label: 'Personal Background - Who are you?',
       placeholder: 'Share your professional background, education, hobbies, and any relevant experiences... The more information you provide, the better! The ai will train on whatever details you give.'
     },
     {
@@ -834,12 +834,12 @@ function PersonalBackgroundStep({
     },
     {
       id: 'experiences',
-      label: 'Relevant Experiences',
+      label: 'Relevant Experience in this Subject',
       placeholder: 'Previous experience with subjects you want to learn? Projects, courses, or skills you\'ve developed?'
     },
     {
       id: 'goals',
-      label: 'Goals and Aspirations',
+      label: 'Preferred Way You Like to Learn',
       placeholder: 'What do you hope to achieve? Where do you see yourself in the future? What impact do you want to make?'
     }
   ]
@@ -925,6 +925,18 @@ function PersonalBackgroundStep({
 }
 
 function TimeAvailabilityStep({ data, updateData, onNext }: { data: any, updateData: (updates: any) => void, onNext: () => void }) {
+  const handleNumberChange = (field: string, value: string) => {
+    // Handle empty string or invalid input
+    if (value === '' || isNaN(parseInt(value))) {
+      updateData({ [field]: '' })
+    } else {
+      const numValue = parseInt(value)
+      if (numValue > 0) {
+        updateData({ [field]: numValue })
+      }
+    }
+  }
+
   return (
     <div>
       <h2 className="text-3xl font-bold text-gray-900 mb-2">Tell Us About Your Time</h2>
@@ -937,8 +949,8 @@ function TimeAvailabilityStep({ data, updateData, onNext }: { data: any, updateD
           </label>
           <input
             type="number"
-            value={data.totalWeeks}
-            onChange={(e) => updateData({ totalWeeks: parseInt(e.target.value) })}
+            value={data.totalWeeks || ''}
+            onChange={(e) => handleNumberChange('totalWeeks', e.target.value)}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
             min="1"
             max="52"
@@ -957,8 +969,8 @@ function TimeAvailabilityStep({ data, updateData, onNext }: { data: any, updateD
           </label>
           <input
             type="number"
-            value={data.sessionsPerWeek}
-            onChange={(e) => updateData({ sessionsPerWeek: parseInt(e.target.value) })}
+            value={data.sessionsPerWeek || ''}
+            onChange={(e) => handleNumberChange('sessionsPerWeek', e.target.value)}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
             min="1"
             max="7"
@@ -977,8 +989,8 @@ function TimeAvailabilityStep({ data, updateData, onNext }: { data: any, updateD
           </label>
           <input
             type="number"
-            value={data.sessionLength}
-            onChange={(e) => updateData({ sessionLength: parseInt(e.target.value) })}
+            value={data.sessionLength || ''}
+            onChange={(e) => handleNumberChange('sessionLength', e.target.value)}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
             min="15"
             max="240"

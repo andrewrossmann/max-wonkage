@@ -302,7 +302,7 @@ export default function CurriculumReview({
               ) : (
                 <>
                   <CheckCircle className="w-5 h-5" />
-                  <span>Approve and Generate Each Session</span>
+                  <span>Approve</span>
                 </>
               )}
             </button>

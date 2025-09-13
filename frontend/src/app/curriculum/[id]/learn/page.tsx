@@ -252,8 +252,7 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
                   <BookOpen className="w-8 h-8 text-yellow-600" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2">{curriculum.title}</h1>
-                  <p className="text-lg text-gray-600">{curriculum.subject}</p>
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">{curriculum.subject}</h1>
                 </div>
               </div>
               <div className="text-right">

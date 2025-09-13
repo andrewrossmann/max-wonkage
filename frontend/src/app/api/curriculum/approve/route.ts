@@ -106,76 +106,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Generate individual sessions
-    const sessions = []
-    const sessionList = finalCurriculum.session_list || []
-
-    for (let i = 0; i < sessionList.length; i++) {
-      const sessionData = sessionList[i]
-      
-      try {
-        // Generate detailed session content
-        const detailedSession = await aiCurriculumGenerator.generateSession(
-          sessionData,
-          {
-            name: curriculum.personal_background?.background || 'User',
-            background: curriculum.personal_background?.background || '',
-            currentRole: 'Professional',
-            skillLevel: curriculum.skill_level,
-            subject: curriculum.subject,
-            goals: curriculum.goals || '',
-            timeAvailability: curriculum.time_availability,
-            personalBackground: curriculum.personal_background
-          }
-        )
-
-        // Calculate reading time for the AI essay
-        const estimatedReadingTime = aiCurriculumGenerator.calculateReadingTime(detailedSession.ai_essay)
-
-        // Create session record
-        const { data: sessionRecord, error: sessionError } = await userSupabase
-          .from('learning_sessions')
-          .insert({
-            curriculum_id: curriculumId,
-            session_number: detailedSession.session_number,
-            title: detailedSession.title,
-            description: detailedSession.description,
-            content: detailedSession,
-            duration_minutes: curriculum.time_availability.sessionLength || curriculum.time_availability.session_length,
-            session_format: detailedSession,
-            ai_essay: detailedSession.ai_essay,
-            estimated_reading_time: estimatedReadingTime,
-            resources: {
-              recommended_readings: detailedSession.recommended_readings,
-              case_studies: detailedSession.case_studies,
-              video_resources: detailedSession.video_resources
-            },
-            discussion_prompts: detailedSession.discussion_prompts,
-            generation_metadata: {
-              generated_at: new Date().toISOString(),
-              model: 'gpt-4',
-              content_density: detailedSession.content_density,
-              session_type: detailedSession.session_type
-            },
-            content_density: detailedSession.content_density,
-            session_type: detailedSession.session_type
-          })
-          .select()
-          .single()
-
-        if (sessionError) {
-          console.error(`Error creating session ${i + 1}:`, sessionError)
-          // Continue with other sessions even if one fails
-          continue
-        }
-
-        sessions.push(sessionRecord)
-      } catch (error) {
-        console.error(`Error generating session ${i + 1}:`, error)
-        // Continue with other sessions even if one fails
-        continue
-      }
-    }
+    // Sessions will be generated when user continues their learning journey
 
     return NextResponse.json({
       success: true,
@@ -185,8 +116,7 @@ export async function POST(request: NextRequest) {
         approved_at: new Date().toISOString(),
         status: 'active'
       },
-      sessions: sessions,
-      message: `Successfully generated ${sessions.length} sessions`
+      message: 'Curriculum approved successfully'
     })
 
   } catch (error) {
