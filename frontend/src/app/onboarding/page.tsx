@@ -109,7 +109,7 @@ export default function OnboardingPage() {
       background: 'I am a 64 year old MBA with 20 years of experience building and managing a health and wellness spa. I recently became Chairman of the Board of local museums in the San Francisco Bay Area.',
       interests: 'I love travel, politics, history, and laughting at my own really bad puns.',
       experiences: 'I like building teams and bringing people together. I have no interest in learning to code, but I would like to be able to apply AI strategically in my non-profit work. I have used chatGPT but that is as far as I have gotten.',
-      goals: 'I feel like I have been falling behind in technology and I want to get up to speed.'
+      goals: ''
     },
     timeAvailability: {
       totalWeeks: 4,
@@ -119,7 +119,7 @@ export default function OnboardingPage() {
     subject: {
       topic: 'AI/Machine Learning',
       skillLevel: 'beginner',
-      goals: 'become well versed in AI/ML and be able to apply it strategically in my non-profit work.',
+      goals: '',
       interests: ['technology', 'non-profit', 'museums', 'travel', 'politics', 'history', 'puns']
     }
   }
@@ -840,7 +840,7 @@ function PersonalBackgroundStep({
     {
       id: 'goals',
       label: 'Preferred Way You Like to Learn',
-      placeholder: 'What do you hope to achieve? Where do you see yourself in the future? What impact do you want to make?'
+      placeholder: 'How do you want your learning sessions to be structured? Default is:\n    • Session Summary\n    • Written Essay\n    • Case studies/examples\n    • Optional video resources\n    • References for further study\n    • Discussion questions'
     }
   ]
 
@@ -1197,7 +1197,7 @@ function SkillLevelStep({
       <div className="flex justify-end mt-8">
         <button
           onClick={onNext}
-          disabled={!data.skillLevel || !data.goals.trim()}
+          disabled={!data.skillLevel}
           className="flex items-center space-x-2 px-6 py-3 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-600 disabled:bg-gray-300 disabled:text-gray-500 transition-colors"
         >
           <span>Review & Continue</span>

@@ -92,6 +92,14 @@ export class AICurriculumGenerator {
       if (timeAvailability.sessionLength <= 30) contentDensity = 'light'
       else if (timeAvailability.sessionLength >= 75) contentDensity = 'intensive'
 
+      // Use default session structure if goals field is empty
+      const sessionStructure = userProfile.goals.trim() || `1) Session Summary
+2) Written Essay
+3) Case studies/examples
+4) Optional video resources
+5) References for further study
+6) Discussion questions`
+
       const prompt = `You are an expert curriculum designer. Create a comprehensive, detailed prompt that will be used to generate a personalized ${userProfile.subject} curriculum.
 
 USER PROFILE:
@@ -99,6 +107,7 @@ USER PROFILE:
 - Skill Level: ${userProfile.skillLevel}
 - Subject: ${userProfile.subject}
 - Learning Goals: ${userProfile.goals}
+- Session Structure Preference: ${sessionStructure}
 
 PERSONAL BACKGROUND:
 - Background: ${personalBackground.background}
@@ -169,12 +178,21 @@ The prompt should be comprehensive yet concise, and ready to be used directly wi
     const totalSessions = timeAvailability.totalWeeks * timeAvailability.sessionsPerWeek
     const totalHours = (totalSessions * timeAvailability.sessionLength) / 60
     
+    // Use default session structure if goals field is empty
+    const sessionStructure = userProfile.goals.trim() || `1) Session Summary
+2) Written Essay
+3) Case studies/examples
+4) Optional video resources
+5) References for further study
+6) Discussion questions`
+
     const prompt = `Create a simple ${userProfile.subject} syllabus for ${userProfile.skillLevel} learners.
 
 BASIC INFO:
 - Subject: ${userProfile.subject}
 - Level: ${userProfile.skillLevel}
 - Goals: ${userProfile.goals}
+- Session Structure: ${sessionStructure}
 - Sessions: ${totalSessions} sessions, ${timeAvailability.sessionLength} minutes each
 
 REQUIREMENTS:
