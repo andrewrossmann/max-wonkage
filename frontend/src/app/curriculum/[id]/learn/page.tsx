@@ -261,12 +261,31 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
               </div>
             </div>
 
-            {/* Progress Bar */}
-            <div className="w-full bg-gray-200 rounded-full h-3 mb-6">
-              <div 
-                className="bg-yellow-500 h-3 rounded-full transition-all duration-500"
-                style={{ width: `${getProgressPercentage()}%` }}
-              ></div>
+            {/* Progress Bar with Session Circles */}
+            <div className="relative mb-6">
+              <div className="w-full bg-gray-200 rounded-full h-3">
+                <div 
+                  className="bg-yellow-500 h-3 rounded-full transition-all duration-500"
+                  style={{ width: `${getProgressPercentage()}%` }}
+                ></div>
+              </div>
+              {/* Session Circles */}
+              <div className="absolute top-1/2 left-0 right-0 flex justify-between transform -translate-y-1/2">
+                {Array.from({ length: curriculum.time_availability.totalWeeks * curriculum.time_availability.sessionsPerWeek }, (_, index) => {
+                  const sessionNumber = index + 1;
+                  const isCompleted = sessions.find(s => s.session_number === sessionNumber)?.completed || false;
+                  return (
+                    <div
+                      key={sessionNumber}
+                      className={`w-4 h-4 rounded-full border-2 transition-all duration-300 ${
+                        isCompleted
+                          ? 'bg-yellow-500 border-yellow-500'
+                          : 'bg-white border-gray-400'
+                      }`}
+                    />
+                  );
+                })}
+              </div>
             </div>
 
             {/* Curriculum Details */}
@@ -291,7 +310,9 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
                 <CalendarDays className="w-5 h-5 text-gray-600" />
                 <div>
                   <div className="text-sm text-gray-600">Total Sessions</div>
-                  <div className="font-semibold text-gray-900">{sessions.length}</div>
+                  <div className="font-semibold text-gray-900">
+                    {curriculum.time_availability.totalWeeks * curriculum.time_availability.sessionsPerWeek}
+                  </div>
                 </div>
               </div>
             </div>
