@@ -351,6 +351,7 @@ Guidelines for visual elements:
 - Use emojis strategically to make content more engaging and scannable
 - Create visual callouts for important insights, tips, and warnings
 - Ensure all visual elements directly support the learning objectives
+- **IMPORTANT**: Do NOT include any ASCII art, text-based diagrams, charts, or layouts using characters like |, -, +, *, or other symbols to create visual representations
 
 Each section must be fully developed with multiple paragraphs. This is the main content users will study for 45 minutes - make it comprehensive, educational, visually engaging, and directly relevant to the user's background and goals.
 
@@ -406,6 +407,7 @@ Guidelines for visual elements:
 - Use emojis strategically to make content more engaging and scannable
 - Create visual callouts for important insights, tips, and warnings
 - Ensure all visual elements directly support the learning objectives
+- **IMPORTANT**: Do NOT include any ASCII art, text-based diagrams, charts, or layouts using characters like |, -, +, *, or other symbols to create visual representations
 
 SESSION CONTEXT:
 - Title: ${sessionData.title}
