@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import Logo from '@/components/Logo'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
+import SessionGenerationProgress from '@/components/SessionGenerationProgress'
 import { Curriculum, LearningSession, getCurriculumSessions, markSessionComplete, markSessionIncomplete } from '@/lib/database'
 import { 
   BookOpen, 
@@ -31,6 +32,12 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
   const [currentSessionIndex, setCurrentSessionIndex] = useState(0)
   const [generatingSessions, setGeneratingSessions] = useState<Set<number>>(new Set())
   const [expandedSessions, setExpandedSessions] = useState<Set<number>>(new Set())
+  const [sessionProgress, setSessionProgress] = useState<{[key: number]: {
+    progress: number
+    stage: 'validating' | 'fetching' | 'generating_structure' | 'generating_essay' | 'saving' | 'complete' | 'error'
+    message: string
+    error?: string
+  }}>({})
 
   useEffect(() => {
     if (!loading && !user) {
@@ -147,8 +154,16 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
     if (!user || !session?.access_token || !curriculum) return
 
     try {
-      // Add session to generating set
+      // Add session to generating set and initialize progress
       setGeneratingSessions(prev => new Set(prev).add(sessionNumber))
+      setSessionProgress(prev => ({
+        ...prev,
+        [sessionNumber]: {
+          progress: 0,
+          stage: 'validating',
+          message: 'Starting generation...'
+        }
+      }))
 
       const response = await fetch('/api/curriculum/session/generate', {
         method: 'POST',
@@ -159,26 +174,77 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
         body: JSON.stringify({
           curriculumId: curriculum.id,
           sessionNumber,
-          userId: user.id
+          userId: user.id,
+          useSSE: true
         })
       })
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to generate session')
+        throw new Error('Failed to start session generation')
       }
 
-      const result = await response.json()
-      
-      // Add the new session to the sessions list
-      setSessions(prev => [...prev, result.session])
-      
-      // Expand the session to show content
-      setExpandedSessions(prev => new Set(prev).add(sessionNumber))
+      // Handle Server-Sent Events
+      const reader = response.body?.getReader()
+      const decoder = new TextDecoder()
+
+      if (!reader) {
+        throw new Error('No response body available')
+      }
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        const chunk = decoder.decode(value)
+        const lines = chunk.split('\n')
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6))
+              
+              // Update progress
+              setSessionProgress(prev => ({
+                ...prev,
+                [sessionNumber]: {
+                  progress: data.progress,
+                  stage: data.stage,
+                  message: data.message,
+                  error: data.data?.error
+                }
+              }))
+
+              // If complete, add session to list and expand
+              if (data.stage === 'complete' && data.data) {
+                setSessions(prev => [...prev, data.data])
+                setExpandedSessions(prev => new Set(prev).add(sessionNumber))
+              }
+
+              // If error, show error message
+              if (data.stage === 'error') {
+                setError(`Failed to generate session ${sessionNumber}: ${data.message}`)
+              }
+            } catch (parseError) {
+              console.error('Error parsing SSE data:', parseError)
+            }
+          }
+        }
+      }
 
     } catch (error) {
       console.error('Error generating session:', error)
       setError(`Failed to generate session ${sessionNumber}: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      
+      // Update progress to show error
+      setSessionProgress(prev => ({
+        ...prev,
+        [sessionNumber]: {
+          progress: 0,
+          stage: 'error',
+          message: error instanceof Error ? error.message : 'Unknown error',
+          error: error instanceof Error ? error.message : 'Unknown error'
+        }
+      }))
     } finally {
       // Remove session from generating set
       setGeneratingSessions(prev => {
@@ -614,23 +680,28 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
                               </button>
                             </div>
                           ) : (
-                            <button
-                              onClick={() => handleGenerateSession(sessionNumber)}
-                              disabled={isGenerating}
-                              className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1"
-                            >
+                            <div className="w-full">
                               {isGenerating ? (
-                                <>
-                                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-600"></div>
-                                  <span>Generating...</span>
-                                </>
+                                <div className="mb-4">
+                                  <SessionGenerationProgress
+                                    isGenerating={isGenerating}
+                                    progress={sessionProgress[sessionNumber]?.progress || 0}
+                                    stage={sessionProgress[sessionNumber]?.stage || 'validating'}
+                                    message={sessionProgress[sessionNumber]?.message || 'Starting generation...'}
+                                    error={sessionProgress[sessionNumber]?.error}
+                                    onRetry={() => handleGenerateSession(sessionNumber)}
+                                  />
+                                </div>
                               ) : (
-                                <>
+                                <button
+                                  onClick={() => handleGenerateSession(sessionNumber)}
+                                  className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium flex items-center space-x-1"
+                                >
                                   <Brain className="w-3 h-3" />
                                   <span>Generate</span>
-                                </>
+                                </button>
                               )}
-                            </button>
+                            </div>
                           )}
                         </div>
                       </div>

@@ -592,12 +592,9 @@ REQUIREMENTS:
             description: parsedResponse.syllabus_overview?.description || `A structured ${request.userProfile.subject} learning journey`,
             total_sessions: sessions.length,
             total_estimated_hours: (sessions.length * request.userProfile.timeAvailability.sessionLength) / 60,
-            curriculum_type: 'syllabus',
+            curriculum_type: 'standard',
             content_density_profile: 'moderate',
-            learning_objectives: parsedResponse.syllabus_overview?.learning_objectives || ['Master core concepts', 'Apply practical skills'],
-            prerequisites: ['Basic understanding'],
-            target_audience: parsedResponse.syllabus_overview?.target_audience || `${request.userProfile.skillLevel} level learners`,
-            key_topics: sessions.map((s: any) => s.title || s.topic).filter(Boolean)
+            learning_outcomes: parsedResponse.syllabus_overview?.learning_objectives || ['Master core concepts', 'Apply practical skills']
           },
           session_list: sessions.map((session: any, index: number) => ({
             session_number: session.session_number || index + 1,
@@ -623,10 +620,7 @@ REQUIREMENTS:
             total_estimated_hours: (sessions.length * request.userProfile.timeAvailability.sessionLength) / 60,
             curriculum_type: 'standard',
             content_density_profile: 'moderate',
-            learning_objectives: ['Master key concepts', 'Apply practical skills'],
-            prerequisites: ['Basic understanding'],
-            target_audience: `${request.userProfile.skillLevel} level learners`,
-            key_topics: sessions.map((s: any) => s.title || s.topic).filter(Boolean)
+            learning_outcomes: ['Master key concepts', 'Apply practical skills'],
           },
           session_list: sessions.map((session: any, index: number) => ({
             session_number: session.session_number || index + 1,
@@ -652,10 +646,7 @@ REQUIREMENTS:
             total_estimated_hours: (sessions.length * request.userProfile.timeAvailability.sessionLength) / 60,
             curriculum_type: 'standard',
             content_density_profile: 'moderate',
-            learning_objectives: ['Master key concepts', 'Apply practical skills'],
-            prerequisites: ['Basic understanding'],
-            target_audience: `${request.userProfile.skillLevel} level learners`,
-            key_topics: sessions.map((s: any) => s.title || s.topic).filter(Boolean)
+            learning_outcomes: ['Master key concepts', 'Apply practical skills'],
           },
           session_list: sessions.map((session: any, index: number) => ({
             session_number: session.session_number || index + 1,
@@ -698,7 +689,10 @@ REQUIREMENTS:
     }
   }
 
-  async generateSession(sessionData: Partial<SessionData>, userProfile: CurriculumGenerationRequest['userProfile']): Promise<SessionData> {
+  async generateSession(sessionData: Partial<SessionData>, userProfile: CurriculumGenerationRequest['userProfile'], onProgress?: (progress: number, message: string) => void): Promise<SessionData> {
+    const startTime = Date.now()
+    const estimatedTotalTime = 45000 // 45 seconds estimated total time
+    
     try {
       console.log(`Generating session ${sessionData.session_number} for curriculum ${userProfile.subject}`)
       console.log('Session data received:', sessionData)
@@ -710,6 +704,19 @@ REQUIREMENTS:
       }
       console.log('OpenAI API key is available')
       
+      // Progress: 5% - Initializing
+      onProgress?.(5, 'Initializing session generation...')
+      
+      // Start time-based progress simulation
+      const progressInterval = setInterval(() => {
+        const elapsed = Date.now() - startTime
+        const estimatedProgress = Math.min(5 + (elapsed / estimatedTotalTime) * 90, 95) // 5% to 95% over time
+        onProgress?.(Math.round(estimatedProgress), 'Generating session content...')
+      }, 500)
+      
+      // Progress: 10% - Preparing session structure
+      onProgress?.(10, 'Preparing session structure...')
+      
       // First, generate the basic session structure
       console.log('Generating session structure prompt...')
       const sessionPrompt = await this.generateSessionStructurePrompt(sessionData, userProfile)
@@ -717,7 +724,11 @@ REQUIREMENTS:
       console.log('Session structure prompt length:', sessionPrompt.length)
       console.log('Session structure prompt preview:', sessionPrompt.substring(0, 200) + '...')
       
+      // Progress: 20% - Prompt ready (milestone)
+      onProgress?.(20, 'Session structure prompt prepared...')
+      
       console.log('Calling OpenAI for session structure generation...')
+      
       const sessionResponse = await openai.chat.completions.create({
         model: 'gpt-4',
         messages: [
@@ -733,12 +744,16 @@ REQUIREMENTS:
         max_tokens: 3000,
         temperature: 0.7,
       })
+      
       console.log('Session structure generation completed')
 
       const sessionContent = sessionResponse.choices[0]?.message?.content
       if (!sessionContent) {
         throw new Error('No session content generated by AI')
       }
+
+      // Progress: 40% - Structure complete (milestone)
+      onProgress?.(40, 'Session structure generated successfully...')
 
       // Parse the JSON response
       console.log('Parsing session structure JSON...')
@@ -754,6 +769,9 @@ REQUIREMENTS:
       
       console.log('AI generated session structure:', JSON.stringify(session, null, 2))
       
+      // Progress: 50% - Preparing essay generation (milestone)
+      onProgress?.(50, 'Preparing comprehensive essay generation...')
+      
       // Now generate the comprehensive essay separately
       console.log('Generating essay prompt...')
       const essayPrompt = await this.generateEssayPrompt(sessionData, userProfile, session)
@@ -761,7 +779,11 @@ REQUIREMENTS:
       console.log('Essay prompt length:', essayPrompt.length)
       console.log('Essay prompt preview:', essayPrompt.substring(0, 200) + '...')
       
+      // Progress: 60% - Essay prompt ready (milestone)
+      onProgress?.(60, 'Essay generation prompt prepared...')
+      
       console.log('Calling OpenAI for essay generation with max_tokens: 16384...')
+      
       const essayResponse = await openai.chat.completions.create({
         model: 'gpt-4o',
         messages: [
@@ -777,12 +799,16 @@ REQUIREMENTS:
         max_tokens: 16384,
         temperature: 0.7,
       })
+      
       console.log('Essay generation completed')
 
       const essayContent = essayResponse.choices[0]?.message?.content
       if (!essayContent) {
         throw new Error('No essay content generated by AI')
       }
+
+      // Progress: 80% - Essay complete (milestone)
+      onProgress?.(80, 'Essay content generated successfully...')
 
       // Add the comprehensive essay to the session
       session.ai_essay = essayContent.trim()
@@ -794,6 +820,9 @@ REQUIREMENTS:
       } else {
         console.log(`AI essay word count: ${wordCount} words`)
       }
+      
+      // Progress: 85% - Processing essay (milestone)
+      onProgress?.(85, 'Processing and validating essay content...')
       
       // Validate the response - be more lenient and provide defaults
       if (!session.title) {
@@ -817,6 +846,15 @@ REQUIREMENTS:
       if (!session.estimated_reading_time) session.estimated_reading_time = userProfile.timeAvailability.sessionLength
       if (!session.content_density) session.content_density = sessionData.content_density || 'moderate'
       if (!session.session_type) session.session_type = sessionData.session_type || 'overview'
+      
+      // Clear the progress interval
+      clearInterval(progressInterval)
+      
+      // Progress: 95% - Almost complete (milestone)
+      onProgress?.(95, 'Session data finalized...')
+      
+      // Progress: 100% - Complete (milestone)
+      onProgress?.(100, 'Session generation completed!')
       
       console.log('Session generation completed')
       return session
