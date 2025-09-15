@@ -370,22 +370,29 @@ export default function DashboardPage() {
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <span className={`px-2 py-1 text-xs rounded-full ${
-                          isCurriculumCompleted(curriculum)
-                            ? 'bg-yellow-100 text-yellow-800' 
-                            : curriculum.status === 'active'
-                            ? 'bg-green-100 text-green-800'
-                            : curriculum.status === 'completed'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {isCurriculumCompleted(curriculum) 
-                            ? 'completed' 
-                            : curriculum.status === 'paused' 
-                            ? 'archived' 
-                            : curriculum.status
-                          }
-                        </span>
+                        <div className="flex flex-col items-end">
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            isCurriculumCompleted(curriculum)
+                              ? 'bg-yellow-100 text-yellow-800' 
+                              : curriculum.status === 'active'
+                              ? 'bg-green-100 text-green-800'
+                              : curriculum.status === 'completed'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {isCurriculumCompleted(curriculum) 
+                              ? 'completed' 
+                              : curriculum.status === 'paused' 
+                              ? 'archived' 
+                              : curriculum.status
+                            }
+                          </span>
+                          {curriculum.status === 'active' && !isCurriculumCompleted(curriculum) && curriculumCompletions[curriculum.id] !== undefined && (
+                            <span className="text-xs text-gray-500 mt-1 text-right">
+                              {curriculumCompletions[curriculum.id]}% completed
+                            </span>
+                          )}
+                        </div>
                         <div className="relative">
                           <button
                             onClick={() => toggleDropdown(curriculum.id)}
@@ -452,6 +459,7 @@ export default function DashboardPage() {
                           'Duration not specified'
                         }
                       </div>
+                      
                     </div>
                     
                     {curriculum.goals && (

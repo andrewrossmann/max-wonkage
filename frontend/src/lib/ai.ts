@@ -47,8 +47,9 @@ export interface SessionData {
   video_resources: Array<{
     title: string
     description: string
-    url?: string
+    url?: string | null
     duration?: string
+    search_terms?: string
   }>
   discussion_prompts: string[]
   ai_essay: string
@@ -251,6 +252,14 @@ ADAPTIVE REQUIREMENTS:
    - Moderate (45-60 min): Balanced theory and practice
    - Intensive (75+ min): Deep dive with extensive examples and analysis
 
+3. VIDEO RESOURCES GUIDELINES:
+   - DO NOT include specific URLs for videos as they often become outdated or unavailable
+   - Instead, provide descriptive titles and detailed descriptions that help users find current content
+   - Include search suggestions in the description (e.g., "Search for: 'machine learning basics TED talk'")
+   - Focus on well-known platforms like YouTube, TED, Coursera, or Khan Academy
+   - Include estimated duration when possible
+   - Make titles specific enough to help with searches
+
 OUTPUT FORMAT:
 Return a JSON object with the following exact structure:
 {
@@ -276,9 +285,10 @@ Return a JSON object with the following exact structure:
   "video_resources": [
     {
       "title": "Video title",
-      "description": "Video description",
-      "url": "optional_url",
-      "duration": "optional_duration"
+      "description": "Video description with search suggestions (e.g., 'Search for: specific terms on YouTube/TED')",
+      "url": null,
+      "duration": "optional_duration",
+      "search_terms": "specific search terms to help find current content"
     }
   ],
   "discussion_prompts": ["prompt1", "prompt2"],
@@ -438,6 +448,15 @@ ADAPTIVE REQUIREMENTS:
    - Moderate (45-60 min): Balanced theory and practice
    - Intensive (75+ min): Deep dive with extensive examples and analysis
 
+4. VIDEO RESOURCES GUIDELINES:
+   - DO NOT include specific URLs for videos as they often become outdated or unavailable
+   - Instead, provide descriptive titles and detailed descriptions that help users find current content
+   - Include search suggestions in the description (e.g., "Search for: 'machine learning basics TED talk'")
+   - Focus on well-known platforms like YouTube, TED, Coursera, or Khan Academy
+   - Include estimated duration when possible
+   - Make titles specific enough to help with searches
+   - Add search_terms field with specific search terms to help users find current content
+
 OUTPUT FORMAT:
 Return a JSON object with the following exact structure. CRITICAL: The ai_essay field must contain 3000-4000 words of comprehensive content - this is the main learning material for the session.
 
@@ -476,9 +495,10 @@ CRITICAL: The ai_essay field must be a comprehensive, detailed essay of 3000-400
   "video_resources": [
     {
       "title": "Video title",
-      "description": "Video description",
-      "url": "optional_url",
-      "duration": "optional_duration"
+      "description": "Video description with search suggestions (e.g., 'Search for: specific terms on YouTube/TED')",
+      "url": null,
+      "duration": "optional_duration",
+      "search_terms": "specific search terms to help find current content"
     }
   ],
   "discussion_prompts": ["prompt1", "prompt2"],

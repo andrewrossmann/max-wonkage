@@ -479,16 +479,38 @@ export default function SessionView({ params }: SessionViewProps) {
                             {video.duration && (
                               <span className="text-sm text-gray-500">{video.duration}</span>
                             )}
-                            {video.url && (
-                              <a
-                                href={video.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center text-red-600 hover:text-red-800 text-sm"
-                              >
-                                Watch Video →
-                              </a>
-                            )}
+                            <div className="flex flex-col items-end space-y-2">
+                              {video.search_terms && (
+                                <>
+                                  <a
+                                    href={`https://www.youtube.com/results?search_query=${encodeURIComponent(video.search_terms)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center text-red-600 hover:text-red-800 text-sm"
+                                  >
+                                    Search YouTube →
+                                  </a>
+                                  <a
+                                    href={`https://www.ted.com/search?q=${encodeURIComponent(video.search_terms)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center text-red-600 hover:text-red-800 text-sm"
+                                  >
+                                    Search TED →
+                                  </a>
+                                </>
+                              )}
+                              {video.url && (
+                                <a
+                                  href={video.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center text-red-600 hover:text-red-800 text-sm"
+                                >
+                                  Watch Video →
+                                </a>
+                              )}
+                            </div>
                           </div>
                         </div>
                       ))}
