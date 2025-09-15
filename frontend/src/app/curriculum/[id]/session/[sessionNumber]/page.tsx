@@ -355,10 +355,10 @@ export default function SessionView({ params }: SessionViewProps) {
 
               {/* AI Essay Section */}
               {content.ai_essay && (
-                <section id="essay" className="bg-white rounded-lg shadow-sm p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-semibold text-gray-900 flex items-center">
-                      <BookOpen className="w-5 h-5 mr-2 text-purple-600" />
+                <section id="essay" className="bg-white rounded-lg shadow-lg p-8">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-bold text-gray-900 flex items-center">
+                      <BookOpen className="w-6 h-6 mr-3 text-purple-600" />
                       {(() => {
                         const headers = ["Let's get started...", "Let's dive in...", "Consider this..."];
                         const randomHeader = headers[Math.floor(Math.random() * headers.length)];
@@ -367,18 +367,18 @@ export default function SessionView({ params }: SessionViewProps) {
                     </h2>
                     <button
                       onClick={() => toggleSection('essay')}
-                      className="p-1 hover:bg-gray-100 rounded"
+                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                     >
                       {expandedSections.has('essay') ? (
-                        <ChevronUp className="w-4 h-4" />
+                        <ChevronUp className="w-5 h-5" />
                       ) : (
-                        <ChevronDown className="w-4 h-4" />
+                        <ChevronDown className="w-5 h-5" />
                       )}
                     </button>
                   </div>
                   {expandedSections.has('essay') && (
                     <div className="prose max-w-none">
-                      <div className="bg-yellow-50 p-6 rounded-lg border-l-4 border-yellow-400">
+                      <div className="bg-gradient-to-br from-yellow-50 to-orange-50 p-8 rounded-xl border-l-4 border-purple-400 shadow-inner">
                         <MarkdownRenderer content={content.ai_essay} />
                       </div>
                     </div>

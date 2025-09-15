@@ -743,64 +743,27 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
                             {/* AI Essay Preview */}
                             {existingSession.content?.ai_essay && (
                               <div>
-                                <h4 className="font-medium text-gray-900 mb-2">
+                                <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                                  <BookOpen className="w-4 h-4 mr-2 text-purple-600" />
                                   {(() => {
                                     const headers = ["Let's get started...", "Let's dive in...", "Consider this..."];
                                     const randomHeader = headers[Math.floor(Math.random() * headers.length)];
                                     return randomHeader;
                                   })()}
                                 </h4>
-                                <div className="text-sm p-3 bg-yellow-50 rounded max-h-40 overflow-y-auto">
+                                <div className="text-sm p-4 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-lg border-l-4 border-purple-400 max-h-40 overflow-y-auto shadow-sm">
                                   <MarkdownRenderer 
                                     content={existingSession.content.ai_essay.substring(0, 500) + (existingSession.content.ai_essay.length > 500 ? '...' : '')} 
                                     className="prose-sm"
                                   />
                                 </div>
-                                <div className="text-xs text-gray-500 mt-1">
+                                <div className="text-xs text-gray-500 mt-2 flex items-center">
+                                  <Clock className="w-3 h-3 mr-1" />
                                   Estimated reading time: {existingSession.estimated_reading_time || existingSession.content?.estimated_reading_time || 15} minutes
                                 </div>
                               </div>
                             )}
 
-                            {/* Recommended Readings */}
-                            {existingSession.content?.recommended_readings && existingSession.content.recommended_readings.length > 0 && (
-                              <div>
-                                <h4 className="font-medium text-gray-900 mb-2">Recommended Readings</h4>
-                                <div className="space-y-2">
-                                  {existingSession.content.recommended_readings.map((reading: any, idx: number) => (
-                                    <div key={idx} className="text-sm text-gray-700 p-2 bg-gray-50 rounded">
-                                      <div className="font-medium">{reading.title}</div>
-                                      {reading.description && (
-                                        <div className="text-gray-600 mt-1">{reading.description}</div>
-                                      )}
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Case Studies */}
-                            {existingSession.content?.case_studies && existingSession.content.case_studies.length > 0 && (
-                              <div>
-                                <h4 className="font-medium text-gray-900 mb-2">Case Studies</h4>
-                                <div className="space-y-3">
-                                  {existingSession.content.case_studies.map((caseStudy: any, idx: number) => (
-                                    <div key={idx} className="text-sm text-gray-700 p-3 bg-blue-50 rounded">
-                                      <div className="font-medium">{caseStudy.title}</div>
-                                      {caseStudy.description && (
-                                        <div className="text-gray-600 mt-1">{caseStudy.description}</div>
-                                      )}
-                                      {caseStudy.example && (
-                                        <div className="mt-2 p-2 bg-white rounded border-l-4 border-blue-200">
-                                          <div className="font-medium text-gray-900">Example:</div>
-                                          <div className="text-gray-700">{caseStudy.example}</div>
-                                        </div>
-                                      )}
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
 
                             {/* Discussion Prompts */}
                             {existingSession.content?.discussion_prompts && existingSession.content.discussion_prompts.length > 0 && (

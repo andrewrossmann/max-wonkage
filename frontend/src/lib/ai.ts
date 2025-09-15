@@ -313,7 +313,6 @@ SESSION DETAILS:
 - Learning Objectives: ${session.learning_objectives?.join(', ')}
 - Overview: ${session.overview}
 - Case Studies: ${JSON.stringify(session.case_studies, null, 2)}
-- Recommended Readings: ${JSON.stringify(session.recommended_readings, null, 2)}
 
 USER BACKGROUND:
 - Experience: ${userProfile.personalBackground.background}
@@ -323,6 +322,8 @@ USER BACKGROUND:
 
 ESSAY REQUIREMENTS:
 Write a comprehensive, detailed essay of 3,000 - 4,000 words that covers:
+
+IMPORTANT: Do NOT include reading references, book recommendations, or external resource lists in your essay content. These are handled separately in the session structure. Focus on creating comprehensive educational content that stands alone.
 
 1. INTRODUCTION: Define key terms and concepts specific to this session's topic
 2. DEEP DIVE: Explain the main concepts with detailed examples and analogies
@@ -335,7 +336,7 @@ Write a comprehensive, detailed essay of 3,000 - 4,000 words that covers:
 VISUAL ENHANCEMENT REQUIREMENTS:
 To make the essay more engaging and easier to read, include rich visual elements throughout the text:
 
-- **Mermaid Diagrams**: Create Mermaid diagrams for flowcharts, process maps, and system architectures using \`\`\`mermaid code blocks
+- **Images**: Include 1-2 relevant, high-quality images that illustrate key concepts, processes, or examples. Use descriptive alt text and place images at natural break points in the content. Images should be educational and directly support the learning objectives. Use markdown image syntax: ![Descriptive alt text](image-url). Place images strategically between major sections or after introducing key concepts to enhance understanding.
 - **Tables**: Use well-formatted markdown tables to organize data, comparisons, and structured information
 - **Code Examples**: Include relevant code snippets, formulas, and technical examples in \`\`\`code blocks
 - **Visual Separators**: Use horizontal rules (---) and blockquotes to break up sections and highlight important information
@@ -343,15 +344,23 @@ To make the essay more engaging and easier to read, include rich visual elements
 - **Callout Boxes**: Use blockquotes with > symbols to create visual callouts for important tips, warnings, and key insights
 - **Lists and Bullets**: Use numbered lists, bullet points, and nested lists to organize information clearly
 - **Headers and Subheaders**: Use proper markdown headers (# ## ###) to create clear content hierarchy
+- **Mermaid Diagrams**: Use Mermaid diagrams SPARINGLY - only for complex processes that truly benefit from visual representation (maximum 1 per essay)
 
 Guidelines for visual elements:
-- Use Mermaid diagrams for complex processes, workflows, and system architectures
+- Include 1-2 relevant images that enhance understanding of key concepts (use placeholder URLs like "https://example.com/concept-image.jpg" with descriptive alt text)
 - Include 2-3 well-designed tables for data organization and comparisons
 - Add 3-5 relevant code examples or technical snippets
 - Use emojis strategically to make content more engaging and scannable
 - Create visual callouts for important insights, tips, and warnings
+- Use Mermaid diagrams only when absolutely necessary for complex workflows (maximum 1 per essay)
 - Ensure all visual elements directly support the learning objectives
 - **IMPORTANT**: Do NOT include any ASCII art, text-based diagrams, charts, or layouts using characters like |, -, +, *, or other symbols to create visual representations
+
+IMAGE PLACEMENT STRATEGY:
+- Place the first image after the introduction section to illustrate the main concept
+- Place the second image (if used) in the middle of the essay to break up text and illustrate a key process or example
+- Always include descriptive alt text that explains what the image shows and how it relates to the content
+- Use images to break up long sections of text and improve readability
 
 Each section must be fully developed with multiple paragraphs. This is the main content users will study for 45 minutes - make it comprehensive, educational, visually engaging, and directly relevant to the user's background and goals.
 
@@ -391,7 +400,7 @@ SPECIFIC INSTRUCTIONS FOR THE AI ESSAY:
 VISUAL ENHANCEMENT REQUIREMENTS:
 To make the essay more engaging and easier to read, include rich visual elements throughout the text:
 
-- **Mermaid Diagrams**: Create Mermaid diagrams for flowcharts, process maps, and system architectures using \`\`\`mermaid code blocks
+- **Images**: Include 1-2 relevant, high-quality images that illustrate key concepts, processes, or examples. Use descriptive alt text and place images at natural break points in the content. Images should be educational and directly support the learning objectives. Use markdown image syntax: ![Descriptive alt text](image-url). Place images strategically between major sections or after introducing key concepts to enhance understanding.
 - **Tables**: Use well-formatted markdown tables to organize data, comparisons, and structured information
 - **Code Examples**: Include relevant code snippets, formulas, and technical examples in \`\`\`code blocks
 - **Visual Separators**: Use horizontal rules (---) and blockquotes to break up sections and highlight important information
@@ -399,15 +408,23 @@ To make the essay more engaging and easier to read, include rich visual elements
 - **Callout Boxes**: Use blockquotes with > symbols to create visual callouts for important tips, warnings, and key insights
 - **Lists and Bullets**: Use numbered lists, bullet points, and nested lists to organize information clearly
 - **Headers and Subheaders**: Use proper markdown headers (# ## ###) to create clear content hierarchy
+- **Mermaid Diagrams**: Use Mermaid diagrams SPARINGLY - only for complex processes that truly benefit from visual representation (maximum 1 per essay)
 
 Guidelines for visual elements:
-- Use Mermaid diagrams for complex processes, workflows, and system architectures
+- Include 1-2 relevant images that enhance understanding of key concepts (use placeholder URLs like "https://example.com/concept-image.jpg" with descriptive alt text)
 - Include 2-3 well-designed tables for data organization and comparisons
 - Add 3-5 relevant code examples or technical snippets
 - Use emojis strategically to make content more engaging and scannable
 - Create visual callouts for important insights, tips, and warnings
+- Use Mermaid diagrams only when absolutely necessary for complex workflows (maximum 1 per essay)
 - Ensure all visual elements directly support the learning objectives
 - **IMPORTANT**: Do NOT include any ASCII art, text-based diagrams, charts, or layouts using characters like |, -, +, *, or other symbols to create visual representations
+
+IMAGE PLACEMENT STRATEGY:
+- Place the first image after the introduction section to illustrate the main concept
+- Place the second image (if used) in the middle of the essay to break up text and illustrate a key process or example
+- Always include descriptive alt text that explains what the image shows and how it relates to the content
+- Use images to break up long sections of text and improve readability
 
 SESSION CONTEXT:
 - Title: ${sessionData.title}
