@@ -82,7 +82,8 @@ export class AICurriculumGenerator {
       
       // Determine curriculum type based on session count
       let curriculumType = 'standard'
-      if (totalSessions <= 5) curriculumType = 'crash_course'
+      if (totalSessions === 1) curriculumType = 'crash_course'
+      else if (totalSessions <= 5) curriculumType = 'crash_course'
       else if (totalSessions <= 15) curriculumType = 'standard'
       else if (totalSessions <= 30) curriculumType = 'comprehensive'
       else curriculumType = 'mastery'
@@ -92,13 +93,12 @@ export class AICurriculumGenerator {
       if (timeAvailability.sessionLength <= 30) contentDensity = 'light'
       else if (timeAvailability.sessionLength >= 75) contentDensity = 'intensive'
 
-      // Use default session structure if goals field is empty
-      const sessionStructure = userProfile.goals.trim() || `1) Session Summary
-2) Written Essay
-3) Case studies/examples
-4) Optional video resources
-5) References for further study
-6) Discussion questions`
+      // Use user's preferred session structure from personalBackground.goals, or default if empty
+      const sessionStructure = personalBackground.goals.trim() || `1) Written Essay
+2) Case studies/examples
+3) Optional video resources
+4) References for further study
+5) Discussion questions`
 
       const prompt = `You are an expert curriculum designer. Create a comprehensive, detailed prompt that will be used to generate a personalized ${userProfile.subject} curriculum.
 
@@ -113,7 +113,7 @@ PERSONAL BACKGROUND:
 - Background: ${personalBackground.background}
 - Interests: ${personalBackground.interests}
 - Relevant Experience: ${personalBackground.experiences}
-- Goals & Aspirations: ${personalBackground.goals}
+- Preferred Learning Style: ${personalBackground.goals}
 
 TIME AVAILABILITY:
 - Total Weeks: ${timeAvailability.totalWeeks} weeks
@@ -125,12 +125,15 @@ TIME AVAILABILITY:
 CURRICULUM SPECIFICATIONS:
 - Type: ${curriculumType} curriculum
 - Content Density: ${contentDensity}
+- Single Session: ${totalSessions === 1 ? 'Yes - focus on essential concepts only' : 'No'}
 
 Create a detailed, well-structured prompt that:
 1. Clearly defines the learning objectives based on the user's goals and skill level
-2. Specifies the curriculum structure and pacing appropriate for their time availability
+2. Specifies the curriculum structure and pacing appropriate for their time availability${totalSessions === 1 ? `
+3. For this single-session course, focus on the most essential concepts and practical applications
+4. Make it comprehensive but concise - cover the core material efficiently` : `
 3. Incorporates their personal background and interests to make it relevant
-4. Sets clear expectations for session content and progression
+4. Sets clear expectations for session content and progression`}
 5. Includes specific instructions for the AI to follow when generating the curriculum
 
 The prompt should be comprehensive yet concise, and ready to be used directly with an AI curriculum generation system.`
@@ -179,12 +182,11 @@ The prompt should be comprehensive yet concise, and ready to be used directly wi
     const totalHours = (totalSessions * timeAvailability.sessionLength) / 60
     
     // Use default session structure if goals field is empty
-    const sessionStructure = userProfile.goals.trim() || `1) Session Summary
-2) Written Essay
-3) Case studies/examples
-4) Optional video resources
-5) References for further study
-6) Discussion questions`
+    const sessionStructure = userProfile.goals.trim() || `1) Written Essay
+2) Case studies/examples
+3) Optional video resources
+4) References for further study
+5) Discussion questions`
 
     const prompt = `Create a simple ${userProfile.subject} syllabus for ${userProfile.skillLevel} learners.
 
@@ -194,12 +196,15 @@ BASIC INFO:
 - Goals: ${userProfile.goals}
 - Session Structure: ${sessionStructure}
 - Sessions: ${totalSessions} sessions, ${timeAvailability.sessionLength} minutes each
+- Total Time: ${totalHours.toFixed(1)} hours
 
 REQUIREMENTS:
 - Create exactly ${totalSessions} sessions
 - Each session needs: session_number, title, description (1-2 sentences)
 - Keep descriptions brief and practical
-- Make sessions build logically
+- Make sessions build logically${totalSessions === 1 ? `
+- This is a single-session course - focus on essential concepts only
+- Make it comprehensive but concise for the time available` : ''}
 
 RESPOND WITH ONLY VALID JSON:
 {
@@ -215,8 +220,10 @@ RESPOND WITH ONLY VALID JSON:
     return prompt
   }
 
-  private async generateSessionPrompt(sessionData: Partial<SessionData>, userProfile: CurriculumGenerationRequest['userProfile']): Promise<string> {
+  private async generateSessionStructurePrompt(sessionData: Partial<SessionData>, userProfile: CurriculumGenerationRequest['userProfile']): Promise<string> {
     const prompt = `You are creating Session ${sessionData.session_number} of a ${userProfile.subject} curriculum for a ${userProfile.skillLevel} level learner.
+
+IMPORTANT: This session must be UNIQUE and focus specifically on the session's learning objectives. Generate the session structure with detailed metadata, readings, case studies, and resources.
 
 SESSION CONTEXT:
 - Title: ${sessionData.title}
@@ -228,7 +235,8 @@ SESSION CONTEXT:
 USER BACKGROUND:
 - Experience: ${userProfile.personalBackground.background}
 - Interests: ${userProfile.personalBackground.interests}
-- Goals: ${userProfile.goals}
+- Learning Goals: ${userProfile.goals}
+- Preferred Learning Style: ${userProfile.personalBackground.goals}
 
 ADAPTIVE REQUIREMENTS:
 1. Create session materials that scale with available time:
@@ -237,15 +245,193 @@ ADAPTIVE REQUIREMENTS:
    - Case Studies/Examples (scale: 1-2 for short, 3-5 for long)
    - Video Resources (scale: 0-1 for short, 2-3 for long)
    - Discussion Prompts (scale: 2-3 for short, 5-7 for long)
-   - AI Essay (scale: ${userProfile.timeAvailability.sessionLength} × 15-20 words per minute)
 
-2. The AI essay must:
-   - Synthesize information from recommended readings
-   - Be written for ${userProfile.skillLevel} level
+2. Content density guidelines:
+   - Light (15-30 min): Focus on key concepts, minimal examples
+   - Moderate (45-60 min): Balanced theory and practice
+   - Intensive (75+ min): Deep dive with extensive examples and analysis
+
+OUTPUT FORMAT:
+Return a JSON object with the following exact structure:
+{
+  "session_number": ${sessionData.session_number},
+  "title": "Session title",
+  "description": "Brief session description",
+  "learning_objectives": ["objective1", "objective2"],
+  "overview": "Detailed session overview explaining what will be covered",
+  "recommended_readings": [
+    {
+      "title": "Reading title",
+      "description": "Reading description",
+      "url": "optional_url"
+    }
+  ],
+  "case_studies": [
+    {
+      "title": "Case study title",
+      "description": "Case study description",
+      "example": "Detailed example"
+    }
+  ],
+  "video_resources": [
+    {
+      "title": "Video title",
+      "description": "Video description",
+      "url": "optional_url",
+      "duration": "optional_duration"
+    }
+  ],
+  "discussion_prompts": ["prompt1", "prompt2"],
+  "estimated_reading_time": ${userProfile.timeAvailability.sessionLength},
+  "content_density": "${sessionData.content_density}",
+  "session_type": "${sessionData.session_type}"
+}
+
+Make sure to include ALL required fields with appropriate content.`
+
+    return prompt
+  }
+
+  private async generateEssayPrompt(sessionData: Partial<SessionData>, userProfile: CurriculumGenerationRequest['userProfile'], session: SessionData): Promise<string> {
+    const prompt = `You are writing a comprehensive educational essay for Session ${sessionData.session_number} of a ${userProfile.subject} curriculum.
+
+CRITICAL REQUIREMENT: Write a comprehensive, detailed essay of 3,000 - 4,000 words that serves as the complete learning material for this session. This is NOT a summary, overview, or outline - it is the COMPLETE ESSAY CONTENT that users will read for 45 minutes.
+
+SESSION DETAILS:
+- Title: ${session.title}
+- Learning Objectives: ${session.learning_objectives?.join(', ')}
+- Overview: ${session.overview}
+- Case Studies: ${JSON.stringify(session.case_studies, null, 2)}
+- Recommended Readings: ${JSON.stringify(session.recommended_readings, null, 2)}
+
+USER BACKGROUND:
+- Experience: ${userProfile.personalBackground.background}
+- Interests: ${userProfile.personalBackground.interests}
+- Learning Goals: ${userProfile.goals}
+- Preferred Learning Style: ${userProfile.personalBackground.goals}
+
+ESSAY REQUIREMENTS:
+Write a comprehensive, detailed essay of 3,000 - 4,000 words that covers:
+
+1. INTRODUCTION: Define key terms and concepts specific to this session's topic
+2. DEEP DIVE: Explain the main concepts with detailed examples and analogies
+3. PRACTICAL APPLICATIONS: Show how these concepts apply in real-world scenarios
+4. CASE STUDY ANALYSIS: Deeply analyze the provided case studies with specific examples
+5. STEP-BY-STEP GUIDES: Provide actionable frameworks or methodologies
+6. COMMON PITFALLS: Explain what to avoid and why
+7. NEXT STEPS: Connect to future learning and practical implementation
+
+VISUAL ENHANCEMENT REQUIREMENTS:
+To make the essay more engaging and easier to read, include rich visual elements throughout the text:
+
+- **Mermaid Diagrams**: Create Mermaid diagrams for flowcharts, process maps, and system architectures using \`\`\`mermaid code blocks
+- **Tables**: Use well-formatted markdown tables to organize data, comparisons, and structured information
+- **Code Examples**: Include relevant code snippets, formulas, and technical examples in \`\`\`code blocks
+- **Visual Separators**: Use horizontal rules (---) and blockquotes to break up sections and highlight important information
+- **Emojis and Icons**: Use relevant emojis (🚀, 💡, ⚠️, ✅, 📊, 🔧, etc.) to highlight key points and make content more engaging
+- **Callout Boxes**: Use blockquotes with > symbols to create visual callouts for important tips, warnings, and key insights
+- **Lists and Bullets**: Use numbered lists, bullet points, and nested lists to organize information clearly
+- **Headers and Subheaders**: Use proper markdown headers (# ## ###) to create clear content hierarchy
+
+Guidelines for visual elements:
+- Use Mermaid diagrams for complex processes, workflows, and system architectures
+- Include 2-3 well-designed tables for data organization and comparisons
+- Add 3-5 relevant code examples or technical snippets
+- Use emojis strategically to make content more engaging and scannable
+- Create visual callouts for important insights, tips, and warnings
+- Ensure all visual elements directly support the learning objectives
+
+Each section must be fully developed with multiple paragraphs. This is the main content users will study for 45 minutes - make it comprehensive, educational, visually engaging, and directly relevant to the user's background and goals.
+
+Write the actual essay content, not a summary or outline.`
+
+    return prompt
+  }
+
+  private async generateSessionPrompt(sessionData: Partial<SessionData>, userProfile: CurriculumGenerationRequest['userProfile']): Promise<string> {
+    const prompt = `You are creating Session ${sessionData.session_number} of a ${userProfile.subject} curriculum for a ${userProfile.skillLevel} level learner.
+
+CRITICAL REQUIREMENT: The AI essay MUST be 3,000-4,000 words of comprehensive, detailed content. This is NOT a summary, overview, or outline - it is the COMPLETE ESSAY CONTENT that users will read for 45 minutes. Write the actual full essay with detailed explanations, examples, step-by-step processes, and practical guidance. DO NOT write "In this essay, we will..." - write the actual essay content.
+
+IMPORTANT: This session must be UNIQUE and focus specifically on the session's learning objectives. The AI essay should be the CORE LEARNING MATERIAL that users study - not generic content, but detailed, specific content about the session's particular topics.
+
+ESSAY REQUIREMENTS:
+- Write a complete, detailed essay of 3000-4000 words
+- Include multiple paragraphs with detailed explanations
+- Provide specific examples and case studies
+- Include step-by-step processes and methodologies
+- Address the user's specific background and goals
+- Make it educational and comprehensive
+- This is the main learning material for a 45-minute session
+
+SPECIFIC INSTRUCTIONS FOR THE AI ESSAY:
+1. Start with a comprehensive introduction that defines key terms and concepts
+2. Provide detailed explanations of the main concepts with multiple examples
+3. Include step-by-step processes and methodologies
+4. Analyze the case studies provided in detail
+5. Discuss practical applications and real-world scenarios
+6. Address common challenges and solutions
+7. Provide actionable next steps and future learning opportunities
+8. Each section must be fully developed with multiple paragraphs
+9. The essay must be 3000-4000 words total
+10. This is the main learning material for a 45-minute session
+
+VISUAL ENHANCEMENT REQUIREMENTS:
+To make the essay more engaging and easier to read, include rich visual elements throughout the text:
+
+- **Mermaid Diagrams**: Create Mermaid diagrams for flowcharts, process maps, and system architectures using \`\`\`mermaid code blocks
+- **Tables**: Use well-formatted markdown tables to organize data, comparisons, and structured information
+- **Code Examples**: Include relevant code snippets, formulas, and technical examples in \`\`\`code blocks
+- **Visual Separators**: Use horizontal rules (---) and blockquotes to break up sections and highlight important information
+- **Emojis and Icons**: Use relevant emojis (🚀, 💡, ⚠️, ✅, 📊, 🔧, etc.) to highlight key points and make content more engaging
+- **Callout Boxes**: Use blockquotes with > symbols to create visual callouts for important tips, warnings, and key insights
+- **Lists and Bullets**: Use numbered lists, bullet points, and nested lists to organize information clearly
+- **Headers and Subheaders**: Use proper markdown headers (# ## ###) to create clear content hierarchy
+
+Guidelines for visual elements:
+- Use Mermaid diagrams for complex processes, workflows, and system architectures
+- Include 2-3 well-designed tables for data organization and comparisons
+- Add 3-5 relevant code examples or technical snippets
+- Use emojis strategically to make content more engaging and scannable
+- Create visual callouts for important insights, tips, and warnings
+- Ensure all visual elements directly support the learning objectives
+
+SESSION CONTEXT:
+- Title: ${sessionData.title}
+- Duration: ${userProfile.timeAvailability.sessionLength} minutes
+- Learning Objectives: ${sessionData.learning_objectives?.join(', ')}
+- Content Density: ${sessionData.content_density}
+- Session Type: ${sessionData.session_type}
+
+USER BACKGROUND:
+- Experience: ${userProfile.personalBackground.background}
+- Interests: ${userProfile.personalBackground.interests}
+- Learning Goals: ${userProfile.goals}
+- Preferred Learning Style: ${userProfile.personalBackground.goals}
+
+ADAPTIVE REQUIREMENTS:
+1. Create session materials that scale with available time:
+   - Overview (proportional to session length)
+   - Recommended Readings (scale: 2-3 for short, 5-7 for long)
+   - Case Studies/Examples (scale: 1-2 for short, 3-5 for long)
+   - Video Resources (scale: 0-1 for short, 2-3 for long)
+   - Discussion Prompts (scale: 2-3 for short, 5-7 for long)
+   - AI Essay (scale: ${userProfile.timeAvailability.sessionLength} × 15-20 words per minute = ${userProfile.timeAvailability.sessionLength * 15}-${userProfile.timeAvailability.sessionLength * 20} words minimum)
+
+2. The AI essay must be the CORE LEARNING MATERIAL for this specific session:
+   - Be comprehensive and detailed (3000-4000 words minimum)
+   - Focus SPECIFICALLY on this session's unique topics and learning objectives
+   - Be written for ${userProfile.skillLevel} level with appropriate depth
    - Take appropriate time to read based on session length
-   - Be practical and applicable
-   - Include real-world examples and case studies
-   - Match the content density level
+   - Be practical and applicable to the user's specific context and background
+   - Include detailed explanations, step-by-step guides, and frameworks
+   - Deeply analyze the case studies with specific examples and insights
+   - Match the content density level with appropriate depth
+   - Provide actionable insights, methodologies, and implementation strategies
+   - Connect theory to practical applications relevant to the user's specific goals
+   - Be UNIQUE to this session - not generic content that could apply to any session
+   - Serve as the primary study material that users will reference and learn from
+   - Include visual enhancements (diagrams, icons, tables, visual separators) to make content more engaging and easier to read
 
 3. Content density guidelines:
    - Light (15-30 min): Focus on key concepts, minimal examples
@@ -253,7 +439,56 @@ ADAPTIVE REQUIREMENTS:
    - Intensive (75+ min): Deep dive with extensive examples and analysis
 
 OUTPUT FORMAT:
-Return a JSON object with all session components properly structured and scaled.`
+Return a JSON object with the following exact structure. CRITICAL: The ai_essay field must contain 3000-4000 words of comprehensive content - this is the main learning material for the session.
+
+EXAMPLE OF WHAT NOT TO DO (too short):
+"In this essay, we will explore supervised learning concepts and applications. We will discuss classification and regression techniques, examine case studies, and provide practical guidance."
+
+EXAMPLE OF WHAT TO DO (comprehensive):
+"Supervised learning represents one of the most fundamental approaches in machine learning, where algorithms learn to make predictions based on labeled training data. Unlike unsupervised learning, which seeks patterns in unlabeled data, supervised learning requires both input features and corresponding output labels to train models effectively. This approach mirrors how humans learn from examples - when we teach a child to recognize animals, we show them pictures and tell them 'this is a cat' or 'this is a dog.' The child learns the patterns and can then identify new animals they haven't seen before. In machine learning, this process is automated through algorithms that can process vast amounts of data and identify complex patterns that might be invisible to human observers..."
+
+The essay should be written like the second example - full, detailed content, not an outline.
+
+REMEMBER: The ai_essay field must contain a complete, detailed essay of 3000-4000 words. This is the main learning material for a 45-minute session. Write the actual essay content, not a summary or outline.
+
+CRITICAL: The ai_essay field must be a comprehensive, detailed essay of 3000-4000 words. This is NOT a summary or overview - it is the complete learning material that users will study for 45 minutes. Write the actual essay content with detailed explanations, examples, and practical guidance.
+
+{
+  "session_number": ${sessionData.session_number},
+  "title": "Session title",
+  "description": "Brief session description",
+  "learning_objectives": ["objective1", "objective2"],
+  "overview": "Detailed session overview explaining what will be covered",
+  "recommended_readings": [
+    {
+      "title": "Reading title",
+      "description": "Reading description",
+      "url": "optional_url"
+    }
+  ],
+  "case_studies": [
+    {
+      "title": "Case study title",
+      "description": "Case study description",
+      "example": "Detailed example"
+    }
+  ],
+  "video_resources": [
+    {
+      "title": "Video title",
+      "description": "Video description",
+      "url": "optional_url",
+      "duration": "optional_duration"
+    }
+  ],
+  "discussion_prompts": ["prompt1", "prompt2"],
+  "ai_essay": "Write a comprehensive, detailed essay of 800-1200 words that serves as the complete learning material for this session. This must be a full, detailed essay with multiple paragraphs covering: 1) Introduction to the topic with clear definitions, 2) Detailed explanation of key concepts with examples, 3) Step-by-step processes and methodologies, 4) Real-world applications and case study analysis, 5) Practical frameworks and implementation strategies, 6) Common challenges and solutions, 7) Actionable next steps and future learning. Each section must be fully developed with multiple paragraphs. This is the main content users will study for 45 minutes - make it comprehensive, educational, and directly relevant to the user's background and goals. IMPORTANT: This must be 800-1200 words of actual essay content, not a summary or outline.",
+  "estimated_reading_time": ${userProfile.timeAvailability.sessionLength},
+  "content_density": "${sessionData.content_density}",
+  "session_type": "${sessionData.session_type}"
+}
+
+Make sure to include ALL required fields with appropriate content.`
 
     return prompt
   }
@@ -465,37 +700,125 @@ REQUIREMENTS:
 
   async generateSession(sessionData: Partial<SessionData>, userProfile: CurriculumGenerationRequest['userProfile']): Promise<SessionData> {
     try {
-      const prompt = await this.generateSessionPrompt(sessionData, userProfile)
+      console.log(`Generating session ${sessionData.session_number} for curriculum ${userProfile.subject}`)
+      console.log('Session data received:', sessionData)
+      console.log('User profile received:', userProfile)
       
-      const response = await openai.chat.completions.create({
+      // Check if OpenAI API key is available
+      if (!process.env.OPENAI_API_KEY) {
+        throw new Error('OpenAI API key is not configured')
+      }
+      console.log('OpenAI API key is available')
+      
+      // First, generate the basic session structure
+      console.log('Generating session structure prompt...')
+      const sessionPrompt = await this.generateSessionStructurePrompt(sessionData, userProfile)
+      
+      console.log('Session structure prompt length:', sessionPrompt.length)
+      console.log('Session structure prompt preview:', sessionPrompt.substring(0, 200) + '...')
+      
+      console.log('Calling OpenAI for session structure generation...')
+      const sessionResponse = await openai.chat.completions.create({
         model: 'gpt-4',
         messages: [
           {
             role: 'system',
-            content: 'You are an expert curriculum designer. You MUST respond with ONLY valid JSON. Do not include any comments, explanations, or text outside the JSON object. The response must start with { and end with }.'
+            content: 'You are an expert curriculum designer. Generate comprehensive learning session structures with detailed metadata, readings, case studies, and resources. Return valid JSON only.'
           },
           {
             role: 'user',
-            content: prompt
+            content: sessionPrompt
           }
         ],
-        max_tokens: 2000,
+        max_tokens: 3000,
         temperature: 0.7,
       })
+      console.log('Session structure generation completed')
 
-      const content = response.choices[0]?.message?.content
-      if (!content) {
-        throw new Error('No content generated by AI')
+      const sessionContent = sessionResponse.choices[0]?.message?.content
+      if (!sessionContent) {
+        throw new Error('No session content generated by AI')
       }
 
       // Parse the JSON response
-      const session = JSON.parse(content) as SessionData
+      console.log('Parsing session structure JSON...')
+      let session: SessionData
+      try {
+        session = JSON.parse(sessionContent) as SessionData
+        console.log('Session structure JSON parsed successfully')
+      } catch (parseError) {
+        console.error('Failed to parse session structure JSON:', parseError)
+        console.error('Raw session content:', sessionContent)
+        throw new Error(`Failed to parse session structure: ${parseError instanceof Error ? parseError.message : 'Unknown parsing error'}`)
+      }
       
-      // Validate the response
-      if (!session.title || !session.overview || !session.ai_essay) {
-        throw new Error('Invalid session structure generated')
+      console.log('AI generated session structure:', JSON.stringify(session, null, 2))
+      
+      // Now generate the comprehensive essay separately
+      console.log('Generating essay prompt...')
+      const essayPrompt = await this.generateEssayPrompt(sessionData, userProfile, session)
+      
+      console.log('Essay prompt length:', essayPrompt.length)
+      console.log('Essay prompt preview:', essayPrompt.substring(0, 200) + '...')
+      
+      console.log('Calling OpenAI for essay generation with max_tokens: 16384...')
+      const essayResponse = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert educational content writer. Write comprehensive, detailed essays that serve as the main learning material for educational sessions. Your essays should be 3,000-4,000 words of detailed, educational content with examples, explanations, and practical guidance.'
+          },
+          {
+            role: 'user',
+            content: essayPrompt
+          }
+        ],
+        max_tokens: 16384,
+        temperature: 0.7,
+      })
+      console.log('Essay generation completed')
+
+      const essayContent = essayResponse.choices[0]?.message?.content
+      if (!essayContent) {
+        throw new Error('No essay content generated by AI')
       }
 
+      // Add the comprehensive essay to the session
+      session.ai_essay = essayContent.trim()
+      
+      // Check essay word count
+      const wordCount = session.ai_essay.split(' ').length
+      if (wordCount < 2000) {
+        console.warn(`AI essay is too short (${wordCount} words), expected 3000-4000 words`)
+      } else {
+        console.log(`AI essay word count: ${wordCount} words`)
+      }
+      
+      // Validate the response - be more lenient and provide defaults
+      if (!session.title) {
+        console.error('Missing title, using fallback')
+        session.title = sessionData.title || `Session ${sessionData.session_number}`
+      }
+      
+      if (!session.overview) {
+        console.error('Missing overview, using description as fallback')
+        session.overview = session.description || 'Session overview will be provided during the session.'
+      }
+      
+      // Ensure arrays are present
+      if (!session.learning_objectives) session.learning_objectives = []
+      if (!session.recommended_readings) session.recommended_readings = []
+      if (!session.case_studies) session.case_studies = []
+      if (!session.video_resources) session.video_resources = []
+      if (!session.discussion_prompts) session.discussion_prompts = []
+      
+      // Set defaults for other required fields
+      if (!session.estimated_reading_time) session.estimated_reading_time = userProfile.timeAvailability.sessionLength
+      if (!session.content_density) session.content_density = sessionData.content_density || 'moderate'
+      if (!session.session_type) session.session_type = sessionData.session_type || 'overview'
+      
+      console.log('Session generation completed')
       return session
     } catch (error) {
       console.error('Error generating session:', error)
@@ -542,7 +865,7 @@ AI essay summarizing recommended readings, long and detailed enough that it take
 
 ${session.ai_essay}
 
-Reading Time: This essay is approximately ${Math.ceil(session.ai_essay.split(/\s+/).length / 250)} minutes to read carefully.`
+Reading Time: This essay is approximately ${Math.ceil(session.ai_essay.split(/\s+/).length / 30)} minutes to read carefully.`
 
     return format
   }

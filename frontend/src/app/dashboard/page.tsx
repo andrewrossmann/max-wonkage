@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import Logo from '@/components/Logo'
 import { Curriculum, archiveCurriculum, deleteCurriculum } from '@/lib/database'
-import { BookOpen, Clock, Target, CalendarDays, Play, MoreVertical, Edit, Archive, Trash2 } from 'lucide-react'
+import { BookOpen, Clock, Target, CalendarDays, Play, MoreVertical, Edit, Archive, Trash2, CheckCircle } from 'lucide-react'
 
 export default function DashboardPage() {
   const { user, session, loading, signOut } = useAuth()
@@ -25,6 +25,19 @@ export default function DashboardPage() {
       router.push('/login')
     }
   }, [user, loading, router])
+
+  // Load completion data for all curricula
+  useEffect(() => {
+    const loadCompletionData = async () => {
+      if (!user || !session?.access_token || curricula.length === 0) return
+      
+      for (const curriculum of curricula) {
+        await getCurriculumCompletionPercentage(curriculum)
+      }
+    }
+    
+    loadCompletionData()
+  }, [curricula, user, session])
 
   useEffect(() => {
     if (user && session?.access_token && !isLoadingData) {
@@ -134,31 +147,69 @@ export default function DashboardPage() {
   }
 
   const handleDeleteCurriculum = async (curriculumId: string) => {
-    if (confirm('Are you sure you want to delete this curriculum? This action cannot be undone.')) {
-      setActionLoading(curriculumId)
-      setError(null)
-      
-      try {
-        const success = await deleteCurriculum(curriculumId)
-        if (success) {
-          // Remove the curriculum from local state
-          setCurricula(prev => prev.filter(curriculum => curriculum.id !== curriculumId))
-          setOpenDropdown(null)
-        } else {
-          setError('Failed to delete curriculum. Please try again.')
-        }
-      } catch (err) {
-        console.error('Error deleting curriculum:', err)
+    setActionLoading(curriculumId)
+    setError(null)
+    
+    try {
+      const success = await deleteCurriculum(curriculumId)
+      if (success) {
+        // Remove the curriculum from local state
+        setCurricula(prev => prev.filter(curriculum => curriculum.id !== curriculumId))
+        setOpenDropdown(null)
+      } else {
         setError('Failed to delete curriculum. Please try again.')
-      } finally {
-        setActionLoading(null)
       }
+    } catch (err) {
+      console.error('Error deleting curriculum:', err)
+      setError('Failed to delete curriculum. Please try again.')
+    } finally {
+      setActionLoading(null)
     }
   }
 
   const handleContinueLearning = (curriculumId: string) => {
     // Navigate to the learning session page
     router.push(`/curriculum/${curriculumId}/learn`)
+  }
+
+  const [curriculumCompletions, setCurriculumCompletions] = useState<Record<string, number>>({})
+
+  const getCurriculumCompletionPercentage = async (curriculum: any): Promise<number> => {
+    if (!curriculum.time_availability) return 0
+    const totalSessions = curriculum.time_availability.totalWeeks * curriculum.time_availability.sessionsPerWeek
+    if (totalSessions === 0) return 0
+    
+    // Check if we already have this data cached
+    if (curriculumCompletions[curriculum.id] !== undefined) {
+      return curriculumCompletions[curriculum.id]
+    }
+    
+    try {
+      // Fetch sessions for this curriculum using the database function
+      const { getCurriculumSessions } = await import('@/lib/database')
+      const sessions = await getCurriculumSessions(curriculum.id)
+      const completedSessions = sessions.filter((s: any) => s.completed).length
+      const percentage = Math.round((completedSessions / totalSessions) * 100)
+      
+      // Cache the result
+      setCurriculumCompletions(prev => ({
+        ...prev,
+        [curriculum.id]: percentage
+      }))
+      
+      console.log(`Curriculum ${curriculum.title}: ${completedSessions}/${totalSessions} sessions completed (${percentage}%)`)
+      return percentage
+    } catch (error) {
+      console.error('Error fetching curriculum completion:', error)
+    }
+    
+    return 0
+  }
+
+  const isCurriculumCompleted = (curriculum: any): boolean => {
+    const isCompleted = curriculumCompletions[curriculum.id] === 100
+    console.log(`Checking completion for ${curriculum.title}: ${curriculumCompletions[curriculum.id]}% - ${isCompleted ? 'COMPLETED' : 'NOT COMPLETED'}`)
+    return isCompleted
   }
 
   const toggleDropdown = (curriculumId: string) => {
@@ -320,13 +371,20 @@ export default function DashboardPage() {
                       </div>
                       <div className="flex items-center space-x-2">
                         <span className={`px-2 py-1 text-xs rounded-full ${
-                          curriculum.status === 'active' 
-                            ? 'bg-green-100 text-green-800' 
+                          isCurriculumCompleted(curriculum)
+                            ? 'bg-yellow-100 text-yellow-800' 
+                            : curriculum.status === 'active'
+                            ? 'bg-green-100 text-green-800'
                             : curriculum.status === 'completed'
-                            ? 'bg-blue-100 text-blue-800'
+                            ? 'bg-green-100 text-green-800'
                             : 'bg-gray-100 text-gray-800'
                         }`}>
-                          {curriculum.status === 'paused' ? 'archived' : curriculum.status}
+                          {isCurriculumCompleted(curriculum) 
+                            ? 'completed' 
+                            : curriculum.status === 'paused' 
+                            ? 'archived' 
+                            : curriculum.status
+                          }
                         </span>
                         <div className="relative">
                           <button
@@ -404,12 +462,16 @@ export default function DashboardPage() {
                     
                     <motion.button
                       onClick={() => handleContinueLearning(curriculum.id)}
-                      className="w-full px-4 py-2 bg-yellow-500 text-black rounded-lg font-medium hover:bg-yellow-600 transition-colors flex items-center justify-center space-x-2"
+                      className={`w-full px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2 ${
+                        isCurriculumCompleted(curriculum)
+                          ? 'bg-white text-black border border-gray-300 hover:bg-gray-50'
+                          : 'bg-yellow-500 text-black hover:bg-yellow-600'
+                      }`}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                     >
                       <Play className="w-4 h-4" />
-                      <span>Continue Learning</span>
+                      <span>{isCurriculumCompleted(curriculum) ? 'Review' : 'Continue Learning'}</span>
                     </motion.button>
                   </motion.div>
                 ))}

@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import Logo from '@/components/Logo'
-import { Curriculum, LearningSession, getCurriculumSessions } from '@/lib/database'
+import MarkdownRenderer from '@/components/MarkdownRenderer'
+import { Curriculum, LearningSession, getCurriculumSessions, markSessionComplete, markSessionIncomplete } from '@/lib/database'
 import { 
   BookOpen, 
   Clock, 
@@ -28,6 +29,8 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
   const [dataLoading, setDataLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [currentSessionIndex, setCurrentSessionIndex] = useState(0)
+  const [generatingSessions, setGeneratingSessions] = useState<Set<number>>(new Set())
+  const [expandedSessions, setExpandedSessions] = useState<Set<number>>(new Set())
 
   useEffect(() => {
     if (!loading && !user) {
@@ -89,10 +92,11 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
     router.push('/dashboard')
   }
 
-  const handleStartSession = (sessionId: string) => {
-    // For now, we'll just show the session content
-    // In the future, this could open a modal or navigate to a dedicated session view
-    console.log('Starting session:', sessionId)
+  const handleStartSession = (sessionId: string, sessionNumber: number) => {
+    // Navigate to the dedicated session view
+    if (curriculum) {
+      router.push(`/curriculum/${curriculum.id}/session/${sessionNumber}`)
+    }
   }
 
   const handleDownloadSession = async (sessionId: string, sessionTitle: string, sessionNumber: number) => {
@@ -133,9 +137,99 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
   }
 
   const getProgressPercentage = (): number => {
-    if (sessions.length === 0) return 0
+    if (!curriculum) return 0
+    const totalSessions = curriculum.time_availability.totalWeeks * curriculum.time_availability.sessionsPerWeek
     const completedSessions = sessions.filter(session => session.completed).length
-    return Math.round((completedSessions / sessions.length) * 100)
+    return Math.round((completedSessions / totalSessions) * 100)
+  }
+
+  const handleGenerateSession = async (sessionNumber: number) => {
+    if (!user || !session?.access_token || !curriculum) return
+
+    try {
+      // Add session to generating set
+      setGeneratingSessions(prev => new Set(prev).add(sessionNumber))
+
+      const response = await fetch('/api/curriculum/session/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          curriculumId: curriculum.id,
+          sessionNumber,
+          userId: user.id
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to generate session')
+      }
+
+      const result = await response.json()
+      
+      // Add the new session to the sessions list
+      setSessions(prev => [...prev, result.session])
+      
+      // Expand the session to show content
+      setExpandedSessions(prev => new Set(prev).add(sessionNumber))
+
+    } catch (error) {
+      console.error('Error generating session:', error)
+      setError(`Failed to generate session ${sessionNumber}: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      // Remove session from generating set
+      setGeneratingSessions(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(sessionNumber)
+        return newSet
+      })
+    }
+  }
+
+  const toggleSessionExpansion = (sessionNumber: number) => {
+    setExpandedSessions(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(sessionNumber)) {
+        newSet.delete(sessionNumber)
+      } else {
+        newSet.add(sessionNumber)
+      }
+      return newSet
+    })
+  }
+
+  const handleSessionCompletionToggle = async (sessionId: string, sessionNumber: number) => {
+    if (!user || !session?.access_token) return
+
+    try {
+      const existingSession = sessions.find(s => s.id === sessionId)
+      if (!existingSession) return
+
+      let updatedSession: LearningSession | null = null
+      
+      if (existingSession.completed) {
+        // Mark as incomplete
+        updatedSession = await markSessionIncomplete(sessionId)
+      } else {
+        // Mark as complete
+        updatedSession = await markSessionComplete(sessionId)
+      }
+
+      if (updatedSession) {
+        // Update the sessions state
+        setSessions(prev => 
+          prev.map(session => 
+            session.id === sessionId ? updatedSession! : session
+          )
+        )
+      }
+    } catch (error) {
+      console.error('Error toggling session completion:', error)
+      setError(`Failed to update session ${sessionNumber} completion status`)
+    }
   }
 
   if (loading) {
@@ -256,7 +350,7 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-2xl font-bold text-yellow-600">{getProgressPercentage()}%</div>
+                <div className="text-2xl font-bold text-blue-600">{getProgressPercentage()}%</div>
                 <div className="text-sm text-gray-600">Complete</div>
               </div>
             </div>
@@ -265,24 +359,40 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
             <div className="relative mb-6">
               <div className="w-full bg-gray-200 rounded-full h-3">
                 <div 
-                  className="bg-yellow-500 h-3 rounded-full transition-all duration-500"
+                  className="bg-blue-500 h-3 rounded-full transition-all duration-500"
                   style={{ width: `${getProgressPercentage()}%` }}
                 ></div>
               </div>
               {/* Session Circles */}
               <div className="absolute top-1/2 left-0 right-0 flex justify-between transform -translate-y-1/2">
+                {/* Session 0 - Starting point */}
+                <div className="w-6 h-6 rounded-full border-2 bg-green-500 border-green-500 shadow-lg flex items-center justify-center">
+                  <CheckCircle className="w-4 h-4 text-white" />
+                </div>
+                
+                {/* Progress Circles - Show completion based on number completed, not specific sessions */}
                 {Array.from({ length: curriculum.time_availability.totalWeeks * curriculum.time_availability.sessionsPerWeek }, (_, index) => {
-                  const sessionNumber = index + 1;
-                  const isCompleted = sessions.find(s => s.session_number === sessionNumber)?.completed || false;
+                  const totalSessions = curriculum.time_availability.totalWeeks * curriculum.time_availability.sessionsPerWeek;
+                  const completedCount = sessions.filter(s => s.completed).length;
+                  const isCompleted = index < completedCount;
+                  const isLastCircle = index === totalSessions - 1;
+                  const isFullyCompleted = completedCount === totalSessions;
+                  
                   return (
                     <div
-                      key={sessionNumber}
-                      className={`w-4 h-4 rounded-full border-2 transition-all duration-300 ${
+                      key={index}
+                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
                         isCompleted
-                          ? 'bg-yellow-500 border-yellow-500'
+                          ? 'bg-green-500 border-green-500 shadow-lg'
                           : 'bg-white border-gray-400'
                       }`}
-                    />
+                    >
+                      {isCompleted ? (
+                        <CheckCircle className="w-4 h-4 text-white" />
+                      ) : (
+                        <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                      )}
+                    </div>
                   );
                 })}
               </div>
@@ -418,6 +528,8 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
                   const existingSession = sessions.find(s => s.session_number === sessionNumber);
                   const isCompleted = existingSession?.completed || false;
                   const isGenerated = !!existingSession;
+                  const isGenerating = generatingSessions.has(sessionNumber);
+                  const isExpanded = expandedSessions.has(sessionNumber);
                   
                   // Get session title from syllabus data
                   const syllabusSession = curriculum.curriculum_data?.session_list?.find((s: any) => 
@@ -443,13 +555,17 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
                       <div className="flex items-center space-x-4">
                         {/* Session Circle */}
                         <div className="flex-shrink-0">
-                          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                            isCompleted
-                              ? 'bg-green-500 border-green-500'
-                              : isGenerated
-                              ? 'bg-yellow-500 border-yellow-500'
-                              : 'bg-white border-gray-400'
-                          }`}>
+                          <div 
+                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
+                              isCompleted
+                                ? 'bg-green-500 border-green-500 cursor-pointer hover:bg-green-600'
+                                : isGenerated
+                                ? 'bg-yellow-500 border-yellow-500 cursor-pointer hover:bg-yellow-600'
+                                : 'bg-white border-gray-400 cursor-not-allowed'
+                            }`}
+                            onClick={() => isGenerated && existingSession && handleSessionCompletionToggle(existingSession.id, sessionNumber)}
+                            title={isGenerated ? (isCompleted ? 'Click to mark as incomplete' : 'Click to mark as complete') : 'Generate session first'}
+                          >
                             {isCompleted && <CheckCircle className="w-4 h-4 text-white" />}
                             {!isCompleted && isGenerated && <Circle className="w-4 h-4 text-white" />}
                           </div>
@@ -478,27 +594,157 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
                         {/* Action Button */}
                         <div className="flex-shrink-0">
                           {isGenerated ? (
-                            <button
-                              onClick={() => handleStartSession(existingSession!.id)}
-                              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-1 ${
-                                isCompleted
-                                  ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                  : 'bg-yellow-500 text-black hover:bg-yellow-600'
-                              }`}
-                            >
-                              <Play className="w-3 h-3" />
-                              <span>{isCompleted ? 'Review' : 'Start'}</span>
-                            </button>
+                            <div className="flex items-center space-x-2">
+                              <button
+                                onClick={() => toggleSessionExpansion(sessionNumber)}
+                                className="px-3 py-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium"
+                              >
+                                {isExpanded ? 'Hide' : 'View'} Content
+                              </button>
+                              <button
+                                onClick={() => handleStartSession(existingSession!.id, sessionNumber)}
+                                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-1 ${
+                                  isCompleted
+                                    ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                    : 'bg-yellow-500 text-black hover:bg-yellow-600'
+                                }`}
+                              >
+                                <Play className="w-3 h-3" />
+                                <span>{isCompleted ? 'Review' : 'Start'}</span>
+                              </button>
+                            </div>
                           ) : (
                             <button
-                              onClick={() => console.log(`Generate session ${sessionNumber}`)}
-                              className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+                              onClick={() => handleGenerateSession(sessionNumber)}
+                              disabled={isGenerating}
+                              className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1"
                             >
-                              Generate
+                              {isGenerating ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-600"></div>
+                                  <span>Generating...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Brain className="w-3 h-3" />
+                                  <span>Generate</span>
+                                </>
+                              )}
                             </button>
                           )}
                         </div>
                       </div>
+
+                      {/* Expanded Session Content */}
+                      {isGenerated && isExpanded && existingSession && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="mt-4 pt-4 border-t border-gray-200"
+                        >
+                          <div className="space-y-4">
+                            {/* Session Overview */}
+                            {existingSession.content?.overview && (
+                              <div>
+                                <h4 className="font-medium text-gray-900 mb-2">Overview</h4>
+                                <p className="text-sm text-gray-700">{existingSession.content.overview}</p>
+                              </div>
+                            )}
+
+                            {/* Learning Objectives */}
+                            {existingSession.content?.learning_objectives && existingSession.content.learning_objectives.length > 0 && (
+                              <div>
+                                <h4 className="font-medium text-gray-900 mb-2">Learning Objectives</h4>
+                                <ul className="text-sm text-gray-700 space-y-1">
+                                  {existingSession.content.learning_objectives.map((objective: string, idx: number) => (
+                                    <li key={idx} className="flex items-start space-x-2">
+                                      <Target className="w-3 h-3 text-yellow-500 mt-1 flex-shrink-0" />
+                                      <span>{objective}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            {/* AI Essay Preview */}
+                            {existingSession.content?.ai_essay && (
+                              <div>
+                                <h4 className="font-medium text-gray-900 mb-2">
+                                  {(() => {
+                                    const headers = ["Let's get started...", "Let's dive in...", "Consider this..."];
+                                    const randomHeader = headers[Math.floor(Math.random() * headers.length)];
+                                    return randomHeader;
+                                  })()}
+                                </h4>
+                                <div className="text-sm p-3 bg-yellow-50 rounded max-h-40 overflow-y-auto">
+                                  <MarkdownRenderer 
+                                    content={existingSession.content.ai_essay.substring(0, 500) + (existingSession.content.ai_essay.length > 500 ? '...' : '')} 
+                                    className="prose-sm"
+                                  />
+                                </div>
+                                <div className="text-xs text-gray-500 mt-1">
+                                  Estimated reading time: {existingSession.estimated_reading_time || existingSession.content?.estimated_reading_time || 15} minutes
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Recommended Readings */}
+                            {existingSession.content?.recommended_readings && existingSession.content.recommended_readings.length > 0 && (
+                              <div>
+                                <h4 className="font-medium text-gray-900 mb-2">Recommended Readings</h4>
+                                <div className="space-y-2">
+                                  {existingSession.content.recommended_readings.map((reading: any, idx: number) => (
+                                    <div key={idx} className="text-sm text-gray-700 p-2 bg-gray-50 rounded">
+                                      <div className="font-medium">{reading.title}</div>
+                                      {reading.description && (
+                                        <div className="text-gray-600 mt-1">{reading.description}</div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Case Studies */}
+                            {existingSession.content?.case_studies && existingSession.content.case_studies.length > 0 && (
+                              <div>
+                                <h4 className="font-medium text-gray-900 mb-2">Case Studies</h4>
+                                <div className="space-y-3">
+                                  {existingSession.content.case_studies.map((caseStudy: any, idx: number) => (
+                                    <div key={idx} className="text-sm text-gray-700 p-3 bg-blue-50 rounded">
+                                      <div className="font-medium">{caseStudy.title}</div>
+                                      {caseStudy.description && (
+                                        <div className="text-gray-600 mt-1">{caseStudy.description}</div>
+                                      )}
+                                      {caseStudy.example && (
+                                        <div className="mt-2 p-2 bg-white rounded border-l-4 border-blue-200">
+                                          <div className="font-medium text-gray-900">Example:</div>
+                                          <div className="text-gray-700">{caseStudy.example}</div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Discussion Prompts */}
+                            {existingSession.content?.discussion_prompts && existingSession.content.discussion_prompts.length > 0 && (
+                              <div>
+                                <h4 className="font-medium text-gray-900 mb-2">Discussion Prompts</h4>
+                                <ul className="text-sm text-gray-700 space-y-2">
+                                  {existingSession.content.discussion_prompts.map((prompt: string, idx: number) => (
+                                    <li key={idx} className="p-2 bg-green-50 rounded">
+                                      {prompt}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                        </motion.div>
+                      )}
                     </motion.div>
                   );
                 })}

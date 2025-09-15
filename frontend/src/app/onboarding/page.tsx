@@ -107,7 +107,7 @@ export default function OnboardingPage() {
   const testData: OnboardingData = {
     personalBackground: {
       background: 'I am a 64 year old MBA with 20 years of experience building and managing a health and wellness spa. I recently became Chairman of the Board of local museums in the San Francisco Bay Area.',
-      interests: 'I love travel, politics, history, and laughting at my own really bad puns.',
+      interests: 'I love travel, politics, history, and laughing at my own really bad puns.',
       experiences: 'I like building teams and bringing people together. I have no interest in learning to code, but I would like to be able to apply AI strategically in my non-profit work. I have used chatGPT but that is as far as I have gotten.',
       goals: ''
     },
@@ -840,7 +840,7 @@ function PersonalBackgroundStep({
     {
       id: 'goals',
       label: 'Preferred Way You Like to Learn',
-      placeholder: 'How do you want your learning sessions to be structured? Default is:\n    • Session Summary\n    • Written Essay\n    • Case studies/examples\n    • Optional video resources\n    • References for further study\n    • Discussion questions'
+      placeholder: 'How do you want your learning sessions to be structured? Default is:\n    • Written Essay\n    • Case studies/examples\n    • Optional video resources\n    • References for further study\n    • Discussion questions'
     }
   ]
 
@@ -858,7 +858,7 @@ function PersonalBackgroundStep({
 
   return (
     <div>
-      <h2 className="text-3xl font-bold text-gray-900 mb-2">Terrific! New let's get to know you</h2>
+      <h2 className="text-3xl font-bold text-gray-900 mb-2">Terrific! Now let's get to know you</h2>
       <p className="text-gray-600 mb-8">Tell us about yourself to create your personalized learning journey</p>
       
       <div className="space-y-6">
@@ -961,6 +961,7 @@ function TimeAvailabilityStep({ data, updateData, onNext }: { data: any, updateD
               }
             }}
           />
+          <p className="text-xs text-gray-500 mt-1">For a single session course, set this to 1</p>
         </div>
         
         <div>
@@ -981,6 +982,7 @@ function TimeAvailabilityStep({ data, updateData, onNext }: { data: any, updateD
               }
             }}
           />
+          <p className="text-xs text-gray-500 mt-1">For a single session course, set this to 1</p>
         </div>
         
         <div>
@@ -1278,7 +1280,7 @@ function ReviewStep({ data, onComplete, onEditStep, onGeneratePrompt, isEditMode
             )}
             {data.personalBackground.goals && (
               <div>
-                <span className="text-gray-600 font-medium text-sm">Goals & Aspirations:</span>
+                <span className="text-gray-600 font-medium text-sm">Preferred Session Structure:</span>
                 <div className="mt-1 text-gray-800 bg-gray-50 p-3 rounded border">
                   {data.personalBackground.goals}
                 </div>

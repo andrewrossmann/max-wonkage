@@ -57,6 +57,14 @@ export interface LearningSession {
   title: string
   description?: string
   content?: any
+  session_format?: any
+  ai_essay?: string
+  estimated_reading_time?: number
+  resources?: any
+  discussion_prompts?: string[]
+  generation_metadata?: any
+  content_density?: string
+  session_type?: string
   duration_minutes?: number
   completed: boolean
   completed_at?: string
@@ -269,6 +277,44 @@ export async function updateSession(sessionId: string, updates: Partial<Learning
 
   if (error) {
     console.error('Error updating session:', error)
+    return null
+  }
+
+  return data
+}
+
+export async function markSessionComplete(sessionId: string): Promise<LearningSession | null> {
+  const { data, error } = await supabase
+    .from('learning_sessions')
+    .update({ 
+      completed: true,
+      completed_at: new Date().toISOString()
+    })
+    .eq('id', sessionId)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error marking session complete:', error)
+    return null
+  }
+
+  return data
+}
+
+export async function markSessionIncomplete(sessionId: string): Promise<LearningSession | null> {
+  const { data, error } = await supabase
+    .from('learning_sessions')
+    .update({ 
+      completed: false,
+      completed_at: null
+    })
+    .eq('id', sessionId)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error marking session incomplete:', error)
     return null
   }
 
