@@ -377,7 +377,9 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
               >
                 <ArrowLeft className="w-5 h-5 text-gray-600" />
               </button>
-              <Logo showText={true} size={32} />
+              <div onClick={handleBackToDashboard} className="cursor-pointer">
+                <Logo showText={true} size={32} />
+              </div>
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-gray-600">

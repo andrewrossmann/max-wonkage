@@ -26,6 +26,28 @@ interface SessionViewProps {
   }>
 }
 
+// Utility function to detect video platform
+function detectVideoPlatform(video: any): 'youtube' | 'ted' | 'unknown' {
+  const title = (video.title || '').toLowerCase()
+  const description = (video.description || '').toLowerCase()
+  const searchTerms = (video.search_terms || '').toLowerCase()
+  
+  const combinedText = `${title} ${description} ${searchTerms}`
+  
+  // Check for TED indicators
+  if (combinedText.includes('ted') || combinedText.includes('ted talk') || combinedText.includes('tedx')) {
+    return 'ted'
+  }
+  
+  // Check for YouTube indicators
+  if (combinedText.includes('youtube') || combinedText.includes('youtube video')) {
+    return 'youtube'
+  }
+  
+  // Default to unknown if no clear platform indicator
+  return 'unknown'
+}
+
 export default function SessionView({ params }: SessionViewProps) {
   const resolvedParams = use(params)
   const { id: curriculumId, sessionNumber } = resolvedParams
@@ -480,26 +502,55 @@ export default function SessionView({ params }: SessionViewProps) {
                               <span className="text-sm text-gray-500">{video.duration}</span>
                             )}
                             <div className="flex flex-col items-end space-y-2">
-                              {video.search_terms && (
-                                <>
-                                  <a
-                                    href={`https://www.youtube.com/results?search_query=${encodeURIComponent(video.search_terms)}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center text-red-600 hover:text-red-800 text-sm"
-                                  >
-                                    Search YouTube →
-                                  </a>
-                                  <a
-                                    href={`https://www.ted.com/search?q=${encodeURIComponent(video.search_terms)}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center text-red-600 hover:text-red-800 text-sm"
-                                  >
-                                    Search TED →
-                                  </a>
-                                </>
-                              )}
+                              {video.search_terms && (() => {
+                                const platform = detectVideoPlatform(video)
+                                
+                                if (platform === 'ted') {
+                                  return (
+                                    <a
+                                      href={`https://www.ted.com/search?q=${encodeURIComponent(video.search_terms)}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center text-red-600 hover:text-red-800 text-sm"
+                                    >
+                                      Search TED →
+                                    </a>
+                                  )
+                                } else if (platform === 'youtube') {
+                                  return (
+                                    <a
+                                      href={`https://www.youtube.com/results?search_query=${encodeURIComponent(video.search_terms)}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center text-red-600 hover:text-red-800 text-sm"
+                                    >
+                                      Search YouTube →
+                                    </a>
+                                  )
+                                } else {
+                                  // For unknown platform, show both options
+                                  return (
+                                    <>
+                                      <a
+                                        href={`https://www.youtube.com/results?search_query=${encodeURIComponent(video.search_terms)}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center text-red-600 hover:text-red-800 text-sm"
+                                      >
+                                        Search YouTube →
+                                      </a>
+                                      <a
+                                        href={`https://www.ted.com/search?q=${encodeURIComponent(video.search_terms)}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center text-red-600 hover:text-red-800 text-sm"
+                                      >
+                                        Search TED →
+                                      </a>
+                                    </>
+                                  )
+                                }
+                              })()}
                               {video.url && (
                                 <a
                                   href={video.url}

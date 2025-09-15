@@ -275,7 +275,7 @@ export default function CurriculumReviewPage({ params }: { params: Promise<{ id:
       <header className="border-b border-gray-200 bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <div onClick={() => router.push('/')} className="cursor-pointer">
+            <div onClick={() => router.push('/dashboard')} className="cursor-pointer">
               <Logo showText={true} size={32} />
             </div>
             <div className="text-sm text-gray-600">

@@ -259,6 +259,7 @@ ADAPTIVE REQUIREMENTS:
    - Focus on well-known platforms like YouTube, TED, Coursera, or Khan Academy
    - Include estimated duration when possible
    - Make titles specific enough to help with searches
+   - IMPORTANT: Include platform hints in the description (e.g., "TED talk about..." or "YouTube video on...") to help the system show the correct search link
 
 OUTPUT FORMAT:
 Return a JSON object with the following exact structure:
@@ -456,6 +457,7 @@ ADAPTIVE REQUIREMENTS:
    - Include estimated duration when possible
    - Make titles specific enough to help with searches
    - Add search_terms field with specific search terms to help users find current content
+   - IMPORTANT: Include platform hints in the description (e.g., "TED talk about..." or "YouTube video on...") to help the system show the correct search link
 
 OUTPUT FORMAT:
 Return a JSON object with the following exact structure. CRITICAL: The ai_essay field must contain 3000-4000 words of comprehensive content - this is the main learning material for the session.
