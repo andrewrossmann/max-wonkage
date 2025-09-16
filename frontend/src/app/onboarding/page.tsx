@@ -113,7 +113,7 @@ export default function OnboardingPage() {
     },
     timeAvailability: {
       totalWeeks: 4,
-      sessionsPerWeek: 2,
+      sessionsPerWeek: 5,
       sessionLength: 45
     },
     subject: {

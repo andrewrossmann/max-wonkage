@@ -16,7 +16,7 @@ The test data includes:
 - **Interests**: Web development, machine learning, data science, etc.
 - **Experiences**: React, Node.js, PostgreSQL, AWS, open source contributions
 - **Goals**: Become senior full-stack developer, learn AI/ML integration
-- **Time Availability**: 6 weeks, 4 sessions/week, 45 minutes each
+- **Time Availability**: 4 weeks, 5 sessions/week, 45 minutes each (20 total sessions)
 - **Subject**: Advanced JavaScript and Modern Web Development
 - **Skill Level**: Intermediate
 - **Learning Goals**: Master advanced JS, learn Next.js/Vue.js, performance optimization
