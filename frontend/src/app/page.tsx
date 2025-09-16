@@ -77,8 +77,8 @@ export default function LandingPage() {
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-8">
               <a href="#about" className={`${isScrolled ? 'text-gray-800' : 'text-white'} hover:text-yellow-400 transition-colors font-medium`}>About</a>
-              <a href="#features" className={`${isScrolled ? 'text-gray-800' : 'text-white'} hover:text-yellow-400 transition-colors font-medium`}>Features</a>
               <a href="#how-it-works" className={`${isScrolled ? 'text-gray-800' : 'text-white'} hover:text-yellow-400 transition-colors font-medium`}>How it Works</a>
+              <a href="#features" className={`${isScrolled ? 'text-gray-800' : 'text-white'} hover:text-yellow-400 transition-colors font-medium`}>Features</a>
               <a href="#contact" className={`${isScrolled ? 'text-gray-800' : 'text-white'} hover:text-yellow-400 transition-colors font-medium`}>Contact</a>
               <motion.button
                 onClick={() => router.push('/login')}
@@ -118,18 +118,18 @@ export default function LandingPage() {
                     About
                   </a>
                   <a 
-                    href="#features" 
-                    className="text-gray-800 hover:text-yellow-600 hover:bg-yellow-50 transition-all duration-200 font-medium px-3 py-2 rounded-lg text-center text-sm"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Features
-                  </a>
-                  <a 
                     href="#how-it-works" 
                     className="text-gray-800 hover:text-yellow-600 hover:bg-yellow-50 transition-all duration-200 font-medium px-3 py-2 rounded-lg text-center text-sm"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     How it Works
+                  </a>
+                  <a 
+                    href="#features" 
+                    className="text-gray-800 hover:text-yellow-600 hover:bg-yellow-50 transition-all duration-200 font-medium px-3 py-2 rounded-lg text-center text-sm"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Features
                   </a>
                   <a 
                     href="#contact" 
@@ -161,7 +161,7 @@ export default function LandingPage() {
         className="relative pt-20 pb-16 overflow-hidden bg-cover bg-center bg-no-repeat min-h-screen flex items-center md:bg-fixed"
         style={{ 
           y,
-          backgroundImage: "url('/womaninbed.png')"
+          backgroundImage: "url('/YourTrustedServant.jpeg')"
         }}
       >
         {/* Background Overlay with Gradient */}
