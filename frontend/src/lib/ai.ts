@@ -77,7 +77,12 @@ export class AICurriculumGenerator {
     try {
       console.log('Generating image with DALL-E 3:', prompt);
       
-      const response = await openai.images.generate({
+      // Add timeout for DALL-E generation
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('DALL-E generation timeout')), 45000) // 45 second timeout
+      })
+      
+      const imagePromise = openai.images.generate({
         model: "dall-e-3",
         prompt: prompt,
         n: 1,
@@ -86,11 +91,37 @@ export class AICurriculumGenerator {
         style: "natural"
       });
       
-      const imageUrl = response.data?.[0]?.url;
+      const response = await Promise.race([imagePromise, timeoutPromise]) as any;
+      
+      if (!response || !response.data || !response.data[0]) {
+        console.error('DALL-E response is invalid:', response);
+        return null;
+      }
+      
+      const imageUrl = response.data[0].url;
       console.log('DALL-E image generated successfully:', imageUrl);
       return imageUrl || null;
     } catch (error) {
       console.error('DALL-E generation failed:', error);
+      
+      // Log specific error details
+      if (error instanceof Error) {
+        console.error('DALL-E error details:', {
+          message: error.message,
+          name: error.name,
+          stack: error.stack
+        });
+        
+        // Handle specific OpenAI API errors
+        if (error.message.includes('rate_limit_exceeded')) {
+          console.warn('DALL-E rate limit exceeded, skipping image generation');
+        } else if (error.message.includes('content_policy_violation')) {
+          console.warn('DALL-E content policy violation, skipping image generation');
+        } else if (error.message.includes('timeout')) {
+          console.warn('DALL-E generation timed out, skipping image generation');
+        }
+      }
+      
       return null;
     }
   }
@@ -114,24 +145,42 @@ export class AICurriculumGenerator {
     const imagePrompts = this.extractImagePrompts(essayContent);
     let processedContent = essayContent;
     
+    console.log(`Processing ${imagePrompts.length} image prompts...`);
+    
+    if (imagePrompts.length === 0) {
+      console.log('No image prompts found in essay content');
+      return processedContent;
+    }
+    
     for (let i = 0; i < imagePrompts.length; i++) {
       const prompt = imagePrompts[i];
-      const imageUrl = await this.generateImageForEssay(prompt);
+      console.log(`Processing image prompt ${i + 1}/${imagePrompts.length}: "${prompt}"`);
       
-      if (imageUrl) {
-        // Replace the prompt with actual markdown image
-        const promptPattern = `[IMAGE_PROMPT: "${prompt}"]`;
-        const imageMarkdown = `![${prompt}](${imageUrl})`;
-        processedContent = processedContent.replace(promptPattern, imageMarkdown);
-        console.log(`Replaced image prompt ${i + 1} with generated image`);
-      } else {
-        // Remove the prompt if image generation failed
+      try {
+        const imageUrl = await this.generateImageForEssay(prompt);
+        
+        if (imageUrl) {
+          // Replace the prompt with actual markdown image
+          const promptPattern = `[IMAGE_PROMPT: "${prompt}"]`;
+          const imageMarkdown = `![${prompt}](${imageUrl})`;
+          processedContent = processedContent.replace(promptPattern, imageMarkdown);
+          console.log(`✅ Successfully replaced image prompt ${i + 1} with generated image`);
+        } else {
+          // Remove the prompt if image generation failed
+          const promptPattern = `[IMAGE_PROMPT: "${prompt}"]`;
+          processedContent = processedContent.replace(promptPattern, '');
+          console.log(`❌ Failed to generate image for prompt ${i + 1}, removed prompt`);
+        }
+      } catch (error) {
+        console.error(`Error processing image prompt ${i + 1}:`, error);
+        // Remove the prompt if there was an error
         const promptPattern = `[IMAGE_PROMPT: "${prompt}"]`;
         processedContent = processedContent.replace(promptPattern, '');
-        console.log(`Removed failed image prompt ${i + 1}`);
+        console.log(`❌ Error processing image prompt ${i + 1}, removed prompt`);
       }
     }
     
+    console.log(`Image processing completed. Processed ${imagePrompts.length} prompts.`);
     return processedContent;
   }
 
@@ -1020,18 +1069,27 @@ REQUIREMENTS:
       console.log('Processing images in essay content...')
       let processedEssay = essayContent.trim()
       
-      try {
-        const imageTimeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Image processing timeout')), 30000) // 30 second timeout for images
-        })
-        
-        const imageProcessingPromise = this.processEssayImages(essayContent.trim())
-        processedEssay = await Promise.race([imageProcessingPromise, imageTimeoutPromise]) as string
-        console.log('Image processing completed successfully')
-      } catch (imageError) {
-        console.warn('Image processing timed out or failed, using essay without images:', imageError)
-        // Use the essay without images if image processing fails
-        processedEssay = essayContent.trim()
+      // Check if image generation is disabled via environment variable
+      const imageGenerationEnabled = process.env.ENABLE_IMAGE_GENERATION !== 'false'
+      
+      if (!imageGenerationEnabled) {
+        console.log('Image generation disabled via environment variable, skipping image processing')
+        // Remove all image prompts without generating images
+        processedEssay = essayContent.replace(/\[IMAGE_PROMPT:\s*"[^"]+"\]/g, '')
+      } else {
+        try {
+          const imageTimeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Image processing timeout')), 30000) // 30 second timeout for images
+          })
+          
+          const imageProcessingPromise = this.processEssayImages(essayContent.trim())
+          processedEssay = await Promise.race([imageProcessingPromise, imageTimeoutPromise]) as string
+          console.log('Image processing completed successfully')
+        } catch (imageError) {
+          console.warn('Image processing timed out or failed, using essay without images:', imageError)
+          // Use the essay without images if image processing fails
+          processedEssay = essayContent.trim()
+        }
       }
       
       session.ai_essay = processedEssay
