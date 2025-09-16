@@ -16,4 +16,4 @@ sleep 2
 
 # Start fresh server
 echo "🚀 Starting fresh server..."
-cd /Users/andrewmann/curricoolio/frontend && npm run dev
+cd /Users/andrewmann/max-wonkage/frontend && npm run dev
