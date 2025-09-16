@@ -1,4 +1,4 @@
--- Fresh Database Schema for CurriCoolio
+-- Fresh Database Schema for Max Wonkage
 -- This schema includes all fields needed for AI curriculum generation
 
 -- Drop existing tables if they exist (be careful with this in production!)

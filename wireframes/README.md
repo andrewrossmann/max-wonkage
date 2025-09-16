@@ -1,6 +1,6 @@
-# Curricoolio Wireframes
+# Max Wonkage Wireframes
 
-This directory contains comprehensive wireframes for all major pages and user flows in the Curricoolio platform.
+This directory contains comprehensive wireframes for all major pages and user flows in the Max Wonkage platform.
 
 ## 📁 Wireframe Files
 

@@ -10,7 +10,7 @@
 └─────────────────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│ Welcome to Curricoolio!                                                    │
+│ Welcome to Max Wonkage!                                                    │
 │                                                                             │
 │ Let's create your personalized learning journey. First, tell us about      │
 │ your available time.                                                        │
@@ -195,7 +195,7 @@
 └─────────────────────────┘
 
 ┌─────────────────────────┐
-│ Welcome to Curricoolio! │
+│ Welcome to Max Wonkage! │
 │                         │
 │ Let's create your       │
 │ personalized learning   │

@@ -1,8 +1,8 @@
-# Curricoolio - Interactive SaaS Website Plan
+# Max Wonkage - Interactive SaaS Website Plan
 
 ## 🎯 Project Overview
 
-**Curricoolio** is an AI-powered educational platform that creates personalized learning curricula optimized for users' available time and constraints. The platform transforms unexpected downtime into productive learning opportunities.
+**Max Wonkage** is an AI-powered educational platform that creates personalized learning curricula optimized for users' available time and constraints. The platform transforms unexpected downtime into productive learning opportunities.
 
 ### Core Value Proposition
 - **Personalized Learning**: AI-generated curricula tailored to time constraints, skill level, and interests
