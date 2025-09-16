@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Logo from '@/components/Logo'
 import { motion } from 'framer-motion'
 
-export default function ConfirmPage() {
+function ConfirmContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
@@ -185,5 +185,21 @@ export default function ConfirmPage() {
         </motion.div>
       </div>
     </div>
+  )
+}
+
+export default function ConfirmPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="max-w-md w-full space-y-8 text-center">
+          <Logo showText={true} size={48} />
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading...</h2>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mx-auto"></div>
+        </div>
+      </div>
+    }>
+      <ConfirmContent />
+    </Suspense>
   )
 }

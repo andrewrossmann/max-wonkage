@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/contexts/AuthContext'
 import Logo from '@/components/Logo'
 
-export default function LoginPage() {
+function LoginContent() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [firstName, setFirstName] = useState('')
@@ -237,5 +237,21 @@ export default function LoginPage() {
         </motion.form>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="max-w-md w-full space-y-8 text-center">
+          <Logo showText={true} size={48} />
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading...</h2>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mx-auto"></div>
+        </div>
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   )
 }

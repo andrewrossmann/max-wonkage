@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/contexts/AuthContext'
@@ -47,7 +47,7 @@ interface OnboardingData {
   }
 }
 
-export default function OnboardingPage() {
+function OnboardingContent() {
   const [currentStep, setCurrentStep] = useState(1)
   const [data, setData] = useState<OnboardingData>({
     personalBackground: {
@@ -1498,5 +1498,21 @@ function PromptReviewStep({ prompt, onPromptChange, onComplete, onReturnToOrigin
         </button>
       </div>
     </div>
+  )
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="max-w-md w-full space-y-8 text-center">
+          <Logo showText={true} size={48} />
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading...</h2>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mx-auto"></div>
+        </div>
+      </div>
+    }>
+      <OnboardingContent />
+    </Suspense>
   )
 }
