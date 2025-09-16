@@ -1,0 +1,13 @@
+{
+  "functions": {
+    "src/app/api/curriculum/generate-prompt/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/curriculum/generate/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/curriculum/session/generate/route.ts": {
+      "maxDuration": 60
+    }
+  }
+}

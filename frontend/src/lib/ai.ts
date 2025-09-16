@@ -202,9 +202,9 @@ Create a detailed, well-structured prompt that:
 
 The prompt should be comprehensive yet concise, and ready to be used directly with an AI curriculum generation system.`
 
-      // Add timeout to prevent long waits
+      // Add timeout to prevent long waits - longer timeout for production
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Request timeout - please try again')), 30000) // 30 second timeout
+        setTimeout(() => reject(new Error('Request timeout - please try again')), 60000) // 60 second timeout for production
       })
 
       const responsePromise = openai.chat.completions.create({
