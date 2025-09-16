@@ -1067,6 +1067,22 @@ REQUIREMENTS:
       return session
     } catch (error) {
       console.error('Error generating session:', error)
+      
+      // Handle specific timeout errors
+      if (error instanceof Error && error.message.includes('timeout')) {
+        throw new Error('Session generation timed out. Please try again with a shorter session or try again later.')
+      }
+      
+      // Handle OpenAI API errors
+      if (error instanceof Error && error.message.includes('API')) {
+        throw new Error('AI service temporarily unavailable. Please try again in a few minutes.')
+      }
+      
+      // Handle other specific errors
+      if (error instanceof Error) {
+        throw new Error(`Session generation failed: ${error.message}`)
+      }
+      
       throw new Error('Failed to generate session. Please try again.')
     }
   }

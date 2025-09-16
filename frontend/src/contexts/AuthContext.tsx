@@ -32,11 +32,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false) // Still set loading to false even on error
     })
 
-    // Set a timeout to prevent infinite loading
+    // Set a timeout to prevent infinite loading - longer timeout for production
     const timeout = setTimeout(() => {
       console.warn('Auth session check timed out, setting loading to false')
       setLoading(false)
-    }, 5000) // 5 second timeout
+    }, 15000) // 15 second timeout for production
 
     // Listen for auth changes
     const {

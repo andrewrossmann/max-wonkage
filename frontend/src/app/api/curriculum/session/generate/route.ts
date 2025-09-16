@@ -63,6 +63,8 @@ async function generateSessionWithProgress(
       progress: 10,
       message: 'Fetching curriculum data...'
     })
+    
+    console.log('Fetching curriculum data for curriculumId:', curriculumId)
 
     // Create a new Supabase client with the user's session token for RLS
     const userSupabase = createClient(
@@ -140,16 +142,23 @@ async function generateSessionWithProgress(
       message: 'Generating session structure and metadata...'
     })
 
+    console.log('Starting AI session generation for session:', sessionNumber)
+    console.log('Session data:', sessionData)
+    console.log('User profile:', userProfile)
+
     // Generate the session using AI with progress tracking
     const generatedSession = await generateSessionWithAITracking(sessionData, userProfile, (progress, message, stage) => {
       // Map AI progress to overall progress (20-80%)
       const overallProgress = 20 + (progress * 0.6)
+      console.log(`AI Progress: ${progress}% - ${message} (${stage})`)
       sendProgress({
         stage: stage || 'generating_structure',
         progress: Math.round(overallProgress),
         message: message
       })
     })
+    
+    console.log('AI session generation completed successfully')
 
     // Stage 4: Saving to database (85%)
     sendProgress({
