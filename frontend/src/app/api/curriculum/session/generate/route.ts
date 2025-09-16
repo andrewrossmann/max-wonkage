@@ -431,6 +431,23 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error generating session:', error)
+    
+    // Handle specific timeout errors
+    if (error instanceof Error && error.message.includes('timeout')) {
+      return NextResponse.json(
+        { error: 'Session generation timed out. Please try again with a shorter session or try again later.' },
+        { status: 408 }
+      )
+    }
+    
+    // Handle OpenAI API errors
+    if (error instanceof Error && error.message.includes('API')) {
+      return NextResponse.json(
+        { error: 'AI service temporarily unavailable. Please try again in a few minutes.' },
+        { status: 503 }
+      )
+    }
+    
     return NextResponse.json(
       { error: 'Failed to generate session. Please try again.' },
       { status: 500 }

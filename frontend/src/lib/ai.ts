@@ -918,7 +918,12 @@ REQUIREMENTS:
       
       console.log('Calling OpenAI for session structure generation...')
       
-      const sessionResponse = await openai.chat.completions.create({
+      // Add timeout for session structure generation
+      const structureTimeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Session structure generation timeout')), 30000) // 30 second timeout
+      })
+      
+      const sessionResponsePromise = openai.chat.completions.create({
         model: 'gpt-4',
         messages: [
           {
@@ -933,6 +938,8 @@ REQUIREMENTS:
         max_tokens: 3000,
         temperature: 0.7,
       })
+      
+      const sessionResponse = await Promise.race([sessionResponsePromise, structureTimeoutPromise]) as any
       
       console.log('Session structure generation completed')
 
@@ -973,7 +980,12 @@ REQUIREMENTS:
       
       console.log('Calling OpenAI for essay generation with max_tokens: 16384...')
       
-      const essayResponse = await openai.chat.completions.create({
+      // Add timeout for essay generation (longer since it's more complex)
+      const essayTimeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Essay generation timeout')), 90000) // 90 second timeout
+      })
+      
+      const essayResponsePromise = openai.chat.completions.create({
         model: 'gpt-4o',
         messages: [
           {
@@ -988,6 +1000,8 @@ REQUIREMENTS:
         max_tokens: 16384,
         temperature: 0.7,
       })
+      
+      const essayResponse = await Promise.race([essayResponsePromise, essayTimeoutPromise]) as any
       
       console.log('Essay generation completed')
 
