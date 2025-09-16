@@ -26,8 +26,24 @@ async function generateSessionWithProgress(
   const encoder = new TextEncoder()
   
   function sendProgress(event: ProgressEvent) {
-    const data = `data: ${JSON.stringify(event)}\n\n`
-    controller.enqueue(encoder.encode(data))
+    try {
+      // Clean the event data to prevent JSON parsing issues
+      const cleanEvent = {
+        stage: event.stage,
+        progress: event.progress,
+        message: event.message?.replace(/[\r\n]/g, ' ').substring(0, 500), // Remove newlines and limit length
+        data: event.data ? JSON.stringify(event.data).substring(0, 1000) : undefined // Limit data size
+      }
+      
+      const jsonString = JSON.stringify(cleanEvent)
+      const data = `data: ${jsonString}\n\n`
+      controller.enqueue(encoder.encode(data))
+    } catch (error) {
+      console.error('Error formatting SSE data:', error)
+      // Send a safe fallback message
+      const safeData = `data: {"stage":"error","progress":0,"message":"Progress update error"}\n\n`
+      controller.enqueue(encoder.encode(safeData))
+    }
   }
 
   try {
@@ -209,12 +225,22 @@ async function generateSessionWithProgress(
     controller.close()
 
   } catch (error) {
-    sendProgress({
-      stage: 'error',
-      progress: 0,
-      message: error instanceof Error ? error.message : 'Unknown error occurred',
-      data: { error: error instanceof Error ? error.message : 'Unknown error' }
-    })
+    console.error('Error in session generation:', error)
+    
+    // Send a safe error message
+    const errorMessage = error instanceof Error ? error.message.replace(/[\r\n]/g, ' ').substring(0, 200) : 'Unknown error occurred'
+    
+    try {
+      sendProgress({
+        stage: 'error',
+        progress: 0,
+        message: errorMessage,
+        data: undefined // Don't include error data to prevent JSON issues
+      })
+    } catch (sseError) {
+      console.error('Error sending error message via SSE:', sseError)
+    }
+    
     controller.close()
   }
 }

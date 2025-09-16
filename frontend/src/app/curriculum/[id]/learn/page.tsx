@@ -201,15 +201,64 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
         for (const line of lines) {
           if (line.startsWith('data: ')) {
             try {
-              const data = JSON.parse(line.slice(6))
+              const jsonString = line.slice(6).trim()
+              
+              // Skip empty or malformed data
+              if (!jsonString || jsonString === '') {
+                continue
+              }
+              
+              // Try to fix common JSON issues
+              let cleanJsonString = jsonString
+              
+              // Remove any trailing incomplete data
+              if (cleanJsonString.endsWith(',')) {
+                cleanJsonString = cleanJsonString.slice(0, -1)
+              }
+              
+              // Try to find the end of valid JSON
+              let validJson = cleanJsonString
+              let braceCount = 0
+              let inString = false
+              let escapeNext = false
+              
+              for (let i = 0; i < cleanJsonString.length; i++) {
+                const char = cleanJsonString[i]
+                
+                if (escapeNext) {
+                  escapeNext = false
+                  continue
+                }
+                
+                if (char === '\\') {
+                  escapeNext = true
+                  continue
+                }
+                
+                if (char === '"' && !escapeNext) {
+                  inString = !inString
+                }
+                
+                if (!inString) {
+                  if (char === '{') braceCount++
+                  if (char === '}') braceCount--
+                  
+                  if (braceCount === 0 && i > 0) {
+                    validJson = cleanJsonString.substring(0, i + 1)
+                    break
+                  }
+                }
+              }
+              
+              const data = JSON.parse(validJson)
               
               // Update progress
               setSessionProgress(prev => ({
                 ...prev,
                 [sessionNumber]: {
-                  progress: data.progress,
-                  stage: data.stage,
-                  message: data.message,
+                  progress: data.progress || 0,
+                  stage: data.stage || 'unknown',
+                  message: data.message || 'Processing...',
                   error: data.data?.error
                 }
               }))
@@ -226,6 +275,18 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
               }
             } catch (parseError) {
               console.error('Error parsing SSE data:', parseError)
+              console.error('Problematic line:', line)
+              
+              // Send a fallback progress update
+              setSessionProgress(prev => ({
+                ...prev,
+                [sessionNumber]: {
+                  progress: prev[sessionNumber]?.progress || 0,
+                  stage: 'error',
+                  message: 'Progress update error',
+                  error: 'Failed to parse progress data'
+                }
+              }))
             }
           }
         }
