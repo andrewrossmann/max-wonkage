@@ -141,11 +141,11 @@ async function generateSessionWithProgress(
     })
 
     // Generate the session using AI with progress tracking
-    const generatedSession = await generateSessionWithAITracking(sessionData, userProfile, (progress, message) => {
+    const generatedSession = await generateSessionWithAITracking(sessionData, userProfile, (progress, message, stage) => {
       // Map AI progress to overall progress (20-80%)
       const overallProgress = 20 + (progress * 0.6)
       sendProgress({
-        stage: 'generating_structure',
+        stage: stage || 'generating_structure',
         progress: Math.round(overallProgress),
         message: message
       })
@@ -214,7 +214,7 @@ async function generateSessionWithProgress(
 async function generateSessionWithAITracking(
   sessionData: any,
   userProfile: CurriculumGenerationRequest['userProfile'],
-  onProgress: (progress: number, message: string) => void
+  onProgress: (progress: number, message: string, stage?: string) => void
 ) {
   return await aiCurriculumGenerator.generateSession(sessionData, userProfile, onProgress)
 }

@@ -72,6 +72,69 @@ export interface GeneratedCurriculum {
 }
 
 export class AICurriculumGenerator {
+  // Generate image using DALL-E 3
+  async generateImageForEssay(prompt: string): Promise<string | null> {
+    try {
+      console.log('Generating image with DALL-E 3:', prompt);
+      
+      const response = await openai.images.generate({
+        model: "dall-e-3",
+        prompt: prompt,
+        n: 1,
+        size: "1024x1024",
+        quality: "standard",
+        style: "natural"
+      });
+      
+      const imageUrl = response.data?.[0]?.url;
+      console.log('DALL-E image generated successfully:', imageUrl);
+      return imageUrl || null;
+    } catch (error) {
+      console.error('DALL-E generation failed:', error);
+      return null;
+    }
+  }
+
+  // Extract image prompts from essay content
+  extractImagePrompts(essayContent: string): string[] {
+    const imagePromptRegex = /\[IMAGE_PROMPT:\s*"([^"]+)"\]/g;
+    const prompts: string[] = [];
+    let match;
+    
+    while ((match = imagePromptRegex.exec(essayContent)) !== null) {
+      prompts.push(match[1]);
+    }
+    
+    console.log('Extracted image prompts:', prompts);
+    return prompts;
+  }
+
+  // Replace image prompts with actual generated images
+  async processEssayImages(essayContent: string): Promise<string> {
+    const imagePrompts = this.extractImagePrompts(essayContent);
+    let processedContent = essayContent;
+    
+    for (let i = 0; i < imagePrompts.length; i++) {
+      const prompt = imagePrompts[i];
+      const imageUrl = await this.generateImageForEssay(prompt);
+      
+      if (imageUrl) {
+        // Replace the prompt with actual markdown image
+        const promptPattern = `[IMAGE_PROMPT: "${prompt}"]`;
+        const imageMarkdown = `![${prompt}](${imageUrl})`;
+        processedContent = processedContent.replace(promptPattern, imageMarkdown);
+        console.log(`Replaced image prompt ${i + 1} with generated image`);
+      } else {
+        // Remove the prompt if image generation failed
+        const promptPattern = `[IMAGE_PROMPT: "${prompt}"]`;
+        processedContent = processedContent.replace(promptPattern, '');
+        console.log(`Removed failed image prompt ${i + 1}`);
+      }
+    }
+    
+    return processedContent;
+  }
+
   async generateSmartPrompt(request: CurriculumGenerationRequest): Promise<string> {
     try {
       const { userProfile } = request
@@ -273,7 +336,7 @@ Return a JSON object with the following exact structure:
     {
       "title": "Reading title",
       "description": "Reading description",
-      "url": "optional_url"
+      "url": "https://www.amazon.com/s?k=book+title+author"
     }
   ],
   "case_studies": [
@@ -325,6 +388,8 @@ Write a comprehensive, detailed essay of 3,000 - 4,000 words that covers:
 
 IMPORTANT: Do NOT include reading references, book recommendations, or external resource lists in your essay content. These are handled separately in the session structure. Focus on creating comprehensive educational content that stands alone.
 
+CRITICAL: Do NOT include "Alt text:" labels or descriptions in your essay content. When including images, use only the markdown syntax: ![brief description](image-url). Do not write "Alt text: [description]" as part of your essay text.
+
 1. INTRODUCTION: Define key terms and concepts specific to this session's topic
 2. DEEP DIVE: Explain the main concepts with detailed examples and analogies
 3. PRACTICAL APPLICATIONS: Show how these concepts apply in real-world scenarios
@@ -336,7 +401,7 @@ IMPORTANT: Do NOT include reading references, book recommendations, or external 
 VISUAL ENHANCEMENT REQUIREMENTS:
 To make the essay more engaging and easier to read, include rich visual elements throughout the text:
 
-- **Images**: Include 1-2 relevant, high-quality images that illustrate key concepts, processes, or examples. Use descriptive alt text and place images at natural break points in the content. Images should be educational and directly support the learning objectives. Use markdown image syntax: ![Descriptive alt text](image-url). Place images strategically between major sections or after introducing key concepts to enhance understanding.
+- **Images**: Include 1-2 relevant, high-quality images that illustrate key concepts, processes, or examples. Instead of using actual image URLs, use this special format: [IMAGE_PROMPT: "detailed description of the ideal image for this concept"]. Place these image prompts at natural break points in the content where images would enhance understanding. The prompts should be specific and descriptive, focusing on what visual would best illustrate the concept being discussed. Examples: [IMAGE_PROMPT: "A modern neural network diagram showing interconnected nodes and data flow"], [IMAGE_PROMPT: "A healthcare professional using AI technology to analyze medical data"]. DO NOT include actual image URLs or "Alt text:" labels in your essay content.
 - **Tables**: Use well-formatted markdown tables to organize data, comparisons, and structured information
 - **Code Examples**: Include relevant code snippets, formulas, and technical examples in \`\`\`code blocks
 - **Visual Separators**: Use horizontal rules (---) and blockquotes to break up sections and highlight important information
@@ -347,7 +412,15 @@ To make the essay more engaging and easier to read, include rich visual elements
 - **Mermaid Diagrams**: Use Mermaid diagrams SPARINGLY - only for complex processes that truly benefit from visual representation (maximum 1 per essay)
 
 Guidelines for visual elements:
-- Include 1-2 relevant images that enhance understanding of key concepts (use placeholder URLs like "https://example.com/concept-image.jpg" with descriptive alt text)
+- Include 1-2 relevant images that enhance understanding of key concepts. Use the special format [IMAGE_PROMPT: "detailed description"] instead of actual image URLs. The prompts should describe exactly what visual would best illustrate the concept being discussed.
+
+IMAGE PROMPT GUIDELINES:
+- Use the format: [IMAGE_PROMPT: "detailed description of the ideal image"]
+- Be specific and descriptive about what the image should show
+- Focus on educational value and relevance to the content
+- Place prompts at natural break points where images would enhance understanding
+- Examples: [IMAGE_PROMPT: "A flowchart showing the AI decision-making process"], [IMAGE_PROMPT: "A modern office with people collaborating using AI tools"]
+- DO NOT include actual image URLs or "Alt text:" labels in your essay content
 - Include 2-3 well-designed tables for data organization and comparisons
 - Add 3-5 relevant code examples or technical snippets
 - Use emojis strategically to make content more engaging and scannable
@@ -361,6 +434,22 @@ IMAGE PLACEMENT STRATEGY:
 - Place the second image (if used) in the middle of the essay to break up text and illustrate a key process or example
 - Always include descriptive alt text that explains what the image shows and how it relates to the content
 - Use images to break up long sections of text and improve readability
+
+EDUCATIONAL IMAGE SOURCES (in order of preference):
+1. **Source Material Images**: Use images from the actual sources you reference (papers, books, official documentation)
+2. **Wikipedia/Wikimedia Commons**: High-quality, well-documented images with proper licensing
+   - WORKING EXAMPLES:
+     - Neural networks: https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Neural_network.svg/800px-Neural_network.svg.png
+     - AI concepts: https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Artificial_neural_network.svg/800px-Artificial_neural_network.svg.png
+     - Technology: https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Computer_science.svg/800px-Computer_science.svg.png
+   - IMPORTANT: Use the full upload.wikimedia.org URLs, not wikipedia.org page URLs
+3. **Educational Institutions**: University websites, research labs, academic departments
+4. **Government/Public Domain**: Official government websites, public domain resources
+5. **Open Educational Resources**: MIT OpenCourseWare, Khan Academy, educational platforms
+6. **Professional Organizations**: IEEE, ACM, professional society websites
+7. **Avoid**: Stock photo sites, generic photography, copyrighted commercial images
+
+IMPORTANT: Always use complete, working URLs. Test that the image URL is accessible and returns an actual image file (jpg, png, svg, etc.). Do not use placeholder URLs or broken links. For Wikipedia images, use the direct upload.wikimedia.org URLs, not the wikipedia.org page URLs.
 
 Each section must be fully developed with multiple paragraphs. This is the main content users will study for 45 minutes - make it comprehensive, educational, visually engaging, and directly relevant to the user's background and goals.
 
@@ -400,7 +489,7 @@ SPECIFIC INSTRUCTIONS FOR THE AI ESSAY:
 VISUAL ENHANCEMENT REQUIREMENTS:
 To make the essay more engaging and easier to read, include rich visual elements throughout the text:
 
-- **Images**: Include 1-2 relevant, high-quality images that illustrate key concepts, processes, or examples. Use descriptive alt text and place images at natural break points in the content. Images should be educational and directly support the learning objectives. Use markdown image syntax: ![Descriptive alt text](image-url). Place images strategically between major sections or after introducing key concepts to enhance understanding.
+- **Images**: Include 1-2 relevant, high-quality images that illustrate key concepts, processes, or examples. Instead of using actual image URLs, use this special format: [IMAGE_PROMPT: "detailed description of the ideal image for this concept"]. Place these image prompts at natural break points in the content where images would enhance understanding. The prompts should be specific and descriptive, focusing on what visual would best illustrate the concept being discussed. Examples: [IMAGE_PROMPT: "A modern neural network diagram showing interconnected nodes and data flow"], [IMAGE_PROMPT: "A healthcare professional using AI technology to analyze medical data"]. DO NOT include actual image URLs or "Alt text:" labels in your essay content.
 - **Tables**: Use well-formatted markdown tables to organize data, comparisons, and structured information
 - **Code Examples**: Include relevant code snippets, formulas, and technical examples in \`\`\`code blocks
 - **Visual Separators**: Use horizontal rules (---) and blockquotes to break up sections and highlight important information
@@ -411,7 +500,15 @@ To make the essay more engaging and easier to read, include rich visual elements
 - **Mermaid Diagrams**: Use Mermaid diagrams SPARINGLY - only for complex processes that truly benefit from visual representation (maximum 1 per essay)
 
 Guidelines for visual elements:
-- Include 1-2 relevant images that enhance understanding of key concepts (use placeholder URLs like "https://example.com/concept-image.jpg" with descriptive alt text)
+- Include 1-2 relevant images that enhance understanding of key concepts. Use the special format [IMAGE_PROMPT: "detailed description"] instead of actual image URLs. The prompts should describe exactly what visual would best illustrate the concept being discussed.
+
+IMAGE PROMPT GUIDELINES:
+- Use the format: [IMAGE_PROMPT: "detailed description of the ideal image"]
+- Be specific and descriptive about what the image should show
+- Focus on educational value and relevance to the content
+- Place prompts at natural break points where images would enhance understanding
+- Examples: [IMAGE_PROMPT: "A flowchart showing the AI decision-making process"], [IMAGE_PROMPT: "A modern office with people collaborating using AI tools"]
+- DO NOT include actual image URLs or "Alt text:" labels in your essay content
 - Include 2-3 well-designed tables for data organization and comparisons
 - Add 3-5 relevant code examples or technical snippets
 - Use emojis strategically to make content more engaging and scannable
@@ -425,6 +522,22 @@ IMAGE PLACEMENT STRATEGY:
 - Place the second image (if used) in the middle of the essay to break up text and illustrate a key process or example
 - Always include descriptive alt text that explains what the image shows and how it relates to the content
 - Use images to break up long sections of text and improve readability
+
+EDUCATIONAL IMAGE SOURCES (in order of preference):
+1. **Source Material Images**: Use images from the actual sources you reference (papers, books, official documentation)
+2. **Wikipedia/Wikimedia Commons**: High-quality, well-documented images with proper licensing
+   - WORKING EXAMPLES:
+     - Neural networks: https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Neural_network.svg/800px-Neural_network.svg.png
+     - AI concepts: https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Artificial_neural_network.svg/800px-Artificial_neural_network.svg.png
+     - Technology: https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Computer_science.svg/800px-Computer_science.svg.png
+   - IMPORTANT: Use the full upload.wikimedia.org URLs, not wikipedia.org page URLs
+3. **Educational Institutions**: University websites, research labs, academic departments
+4. **Government/Public Domain**: Official government websites, public domain resources
+5. **Open Educational Resources**: MIT OpenCourseWare, Khan Academy, educational platforms
+6. **Professional Organizations**: IEEE, ACM, professional society websites
+7. **Avoid**: Stock photo sites, generic photography, copyrighted commercial images
+
+IMPORTANT: Always use complete, working URLs. Test that the image URL is accessible and returns an actual image file (jpg, png, svg, etc.). Do not use placeholder URLs or broken links. For Wikipedia images, use the direct upload.wikimedia.org URLs, not the wikipedia.org page URLs.
 
 SESSION CONTEXT:
 - Title: ${sessionData.title}
@@ -468,7 +581,31 @@ ADAPTIVE REQUIREMENTS:
    - Moderate (45-60 min): Balanced theory and practice
    - Intensive (75+ min): Deep dive with extensive examples and analysis
 
-4. VIDEO RESOURCES GUIDELINES:
+4. RECOMMENDED READINGS GUIDELINES:
+   - ALWAYS include working URLs for recommended readings
+   - For books: Use Amazon URLs (amazon.com) with the book's ASIN or ISBN
+   - For academic papers: Use direct links to the paper (arXiv, PubMed, IEEE, ACM, etc.)
+   - For articles: Use direct links to the source (news sites, blogs, official documentation)
+   - For online resources: Use direct links to the resource (Wikipedia, official docs, etc.)
+   - URLs should be complete and functional (start with https://)
+   - Include search terms in the description to help users find the resource if the URL fails
+   
+   AMAZON URL REQUIREMENTS:
+   - Use the format: https://www.amazon.com/dp/[ASIN] or https://www.amazon.com/dp/[ISBN]
+   - ONLY use ASINs/ISBNs for books that you are CERTAIN exist on Amazon
+   - If unsure about the exact ASIN/ISBN, use the search format: https://www.amazon.com/s?k=[book+title+author]
+   - For search URLs, replace spaces with + and use the exact book title and author
+   - Examples of reliable Amazon URLs:
+     - Direct ASIN: "https://www.amazon.com/dp/0134685997" (for "Hands-On Machine Learning" by Aurélien Géron)
+     - Search URL: "https://www.amazon.com/s?k=hands+on+machine+learning+aurélien+géron"
+     - Direct ISBN: "https://www.amazon.com/dp/9780134685997" (for books with known ISBNs)
+   
+   OTHER RESOURCE EXAMPLES:
+     - Papers: "https://arxiv.org/abs/1706.03762" (for "Attention Is All You Need")
+     - Articles: "https://en.wikipedia.org/wiki/Machine_learning" (for Wikipedia articles)
+     - Documentation: "https://scikit-learn.org/stable/user_guide.html" (for official docs)
+
+5. VIDEO RESOURCES GUIDELINES:
    - DO NOT include specific URLs for videos as they often become outdated or unavailable
    - Instead, provide descriptive titles and detailed descriptions that help users find current content
    - Include search suggestions in the description (e.g., "Search for: 'machine learning basics TED talk'")
@@ -480,6 +617,22 @@ ADAPTIVE REQUIREMENTS:
 
 OUTPUT FORMAT:
 Return a JSON object with the following exact structure. CRITICAL: The ai_essay field must contain 3000-4000 words of comprehensive content - this is the main learning material for the session.
+
+IMPORTANT FOR RECOMMENDED READINGS:
+- ALWAYS include working URLs for every recommended reading
+- Use real, functional URLs that users can click to access the resources
+- For books, use Amazon URLs with the actual book's ASIN or ISBN
+- For academic papers, use direct links to the paper source
+- For articles, use direct links to the source website
+- Do NOT use placeholder URLs like "optional_url" or "example.com"
+- Test that URLs are complete and functional (start with https://)
+
+AMAZON URL ACCURACY:
+- ONLY use direct ASIN/ISBN URLs if you are 100% certain the book exists with that identifier
+- When in doubt, use Amazon search URLs: https://www.amazon.com/s?k=[book+title+author]
+- Search URLs are more reliable than guessing ASINs/ISBNs
+- Include the author's name in search URLs for better accuracy
+- Example: "https://www.amazon.com/s?k=machine+learning+andrew+ng" instead of guessing an ASIN
 
 EXAMPLE OF WHAT NOT TO DO (too short):
 "In this essay, we will explore supervised learning concepts and applications. We will discuss classification and regression techniques, examine case studies, and provide practical guidance."
@@ -503,7 +656,7 @@ CRITICAL: The ai_essay field must be a comprehensive, detailed essay of 3000-400
     {
       "title": "Reading title",
       "description": "Reading description",
-      "url": "optional_url"
+      "url": "https://www.amazon.com/s?k=book+title+author"
     }
   ],
   "case_studies": [
@@ -730,7 +883,7 @@ REQUIREMENTS:
     }
   }
 
-  async generateSession(sessionData: Partial<SessionData>, userProfile: CurriculumGenerationRequest['userProfile'], onProgress?: (progress: number, message: string) => void): Promise<SessionData> {
+  async generateSession(sessionData: Partial<SessionData>, userProfile: CurriculumGenerationRequest['userProfile'], onProgress?: (progress: number, message: string, stage?: string) => void): Promise<SessionData> {
     const startTime = Date.now()
     const estimatedTotalTime = 45000 // 45 seconds estimated total time
     
@@ -746,17 +899,12 @@ REQUIREMENTS:
       console.log('OpenAI API key is available')
       
       // Progress: 5% - Initializing
-      onProgress?.(5, 'Initializing session generation...')
+      onProgress?.(5, 'Initializing session generation...', 'validating')
       
-      // Start time-based progress simulation
-      const progressInterval = setInterval(() => {
-        const elapsed = Date.now() - startTime
-        const estimatedProgress = Math.min(5 + (elapsed / estimatedTotalTime) * 90, 95) // 5% to 95% over time
-        onProgress?.(Math.round(estimatedProgress), 'Generating session content...')
-      }, 500)
+      // Note: Progress is now managed manually through specific stage calls
       
       // Progress: 10% - Preparing session structure
-      onProgress?.(10, 'Preparing session structure...')
+      onProgress?.(10, 'Preparing session structure...', 'generating_structure')
       
       // First, generate the basic session structure
       console.log('Generating session structure prompt...')
@@ -766,7 +914,7 @@ REQUIREMENTS:
       console.log('Session structure prompt preview:', sessionPrompt.substring(0, 200) + '...')
       
       // Progress: 20% - Prompt ready (milestone)
-      onProgress?.(20, 'Session structure prompt prepared...')
+      onProgress?.(20, 'Session structure prompt prepared...', 'generating_structure')
       
       console.log('Calling OpenAI for session structure generation...')
       
@@ -794,7 +942,7 @@ REQUIREMENTS:
       }
 
       // Progress: 40% - Structure complete (milestone)
-      onProgress?.(40, 'Session structure generated successfully...')
+      onProgress?.(40, 'Session structure generated successfully...', 'generating_structure')
 
       // Parse the JSON response
       console.log('Parsing session structure JSON...')
@@ -811,7 +959,7 @@ REQUIREMENTS:
       console.log('AI generated session structure:', JSON.stringify(session, null, 2))
       
       // Progress: 50% - Preparing essay generation (milestone)
-      onProgress?.(50, 'Preparing comprehensive essay generation...')
+      onProgress?.(50, 'Preparing comprehensive essay generation...', 'generating_essay')
       
       // Now generate the comprehensive essay separately
       console.log('Generating essay prompt...')
@@ -821,7 +969,7 @@ REQUIREMENTS:
       console.log('Essay prompt preview:', essayPrompt.substring(0, 200) + '...')
       
       // Progress: 60% - Essay prompt ready (milestone)
-      onProgress?.(60, 'Essay generation prompt prepared...')
+      onProgress?.(60, 'Essay generation prompt prepared...', 'generating_essay')
       
       console.log('Calling OpenAI for essay generation with max_tokens: 16384...')
       
@@ -849,10 +997,15 @@ REQUIREMENTS:
       }
 
       // Progress: 80% - Essay complete (milestone)
-      onProgress?.(80, 'Essay content generated successfully...')
+      onProgress?.(80, 'Essay content generated successfully...', 'generating_essay')
 
-      // Add the comprehensive essay to the session
-      session.ai_essay = essayContent.trim()
+      // Progress: 85% - Processing images (milestone)
+      onProgress?.(85, 'Generating custom images for essay...', 'generating_images')
+
+      // Process images in the essay content
+      console.log('Processing images in essay content...')
+      const processedEssay = await this.processEssayImages(essayContent.trim())
+      session.ai_essay = processedEssay
       
       // Check essay word count
       const wordCount = session.ai_essay.split(' ').length
@@ -862,8 +1015,8 @@ REQUIREMENTS:
         console.log(`AI essay word count: ${wordCount} words`)
       }
       
-      // Progress: 85% - Processing essay (milestone)
-      onProgress?.(85, 'Processing and validating essay content...')
+      // Progress: 90% - Processing complete (milestone)
+      onProgress?.(90, 'Processing and validating essay content...', 'generating_images')
       
       // Validate the response - be more lenient and provide defaults
       if (!session.title) {
@@ -888,14 +1041,13 @@ REQUIREMENTS:
       if (!session.content_density) session.content_density = sessionData.content_density || 'moderate'
       if (!session.session_type) session.session_type = sessionData.session_type || 'overview'
       
-      // Clear the progress interval
-      clearInterval(progressInterval)
+      // Progress is now managed manually
       
       // Progress: 95% - Almost complete (milestone)
-      onProgress?.(95, 'Session data finalized...')
+      onProgress?.(95, 'Session data finalized...', 'saving')
       
       // Progress: 100% - Complete (milestone)
-      onProgress?.(100, 'Session generation completed!')
+      onProgress?.(100, 'Session with custom images completed!', 'complete')
       
       console.log('Session generation completed')
       return session

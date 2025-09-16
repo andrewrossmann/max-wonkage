@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Loader2, CheckCircle, AlertCircle, RefreshCw, Brain, FileText, Database, Zap } from 'lucide-react'
+import { Loader2, CheckCircle, AlertCircle, RefreshCw, Brain, FileText, Database, Zap, Search, BarChart3, Puzzle, PenTool, Palette, Save } from 'lucide-react'
 
 interface SessionProgressProps {
   isGenerating: boolean
   progress: number
-  stage: 'validating' | 'fetching' | 'generating_structure' | 'generating_essay' | 'saving' | 'complete' | 'error'
+  stage: 'validating' | 'fetching' | 'generating_structure' | 'generating_essay' | 'generating_images' | 'saving' | 'complete' | 'error'
   message: string
   error?: string
   onRetry?: () => void
@@ -17,7 +17,7 @@ const stageInfo = {
   validating: {
     title: 'Validating Request',
     description: 'Checking parameters and permissions...',
-    icon: '🔍',
+    icon: <Search className="w-6 h-6" />,
     color: 'text-blue-500',
     bgColor: 'bg-blue-50',
     borderColor: 'border-blue-200'
@@ -25,7 +25,7 @@ const stageInfo = {
   fetching: {
     title: 'Fetching Data',
     description: 'Retrieving curriculum information...',
-    icon: '📊',
+    icon: <BarChart3 className="w-6 h-6" />,
     color: 'text-indigo-500',
     bgColor: 'bg-indigo-50',
     borderColor: 'border-indigo-200'
@@ -33,7 +33,7 @@ const stageInfo = {
   generating_structure: {
     title: 'Generating Structure',
     description: 'Creating session metadata and learning objectives...',
-    icon: '🧩',
+    icon: <Puzzle className="w-6 h-6" />,
     color: 'text-purple-500',
     bgColor: 'bg-purple-50',
     borderColor: 'border-purple-200'
@@ -41,15 +41,23 @@ const stageInfo = {
   generating_essay: {
     title: 'Writing Content',
     description: 'Generating comprehensive learning materials...',
-    icon: '✍️',
-    color: 'text-orange-500',
-    bgColor: 'bg-orange-50',
-    borderColor: 'border-orange-200'
+    icon: <PenTool className="w-6 h-6" />,
+    color: 'text-blue-500',
+    bgColor: 'bg-blue-50',
+    borderColor: 'border-blue-200'
+  },
+  generating_images: {
+    title: 'Creating Images',
+    description: 'Generating custom images for your content...',
+    icon: <Palette className="w-6 h-6" />,
+    color: 'text-pink-500',
+    bgColor: 'bg-pink-50',
+    borderColor: 'border-pink-200'
   },
   saving: {
     title: 'Saving Session',
     description: 'Storing your new learning session...',
-    icon: '💾',
+    icon: <Save className="w-6 h-6" />,
     color: 'text-green-500',
     bgColor: 'bg-green-50',
     borderColor: 'border-green-200'
@@ -57,7 +65,7 @@ const stageInfo = {
   complete: {
     title: 'Complete!',
     description: 'Your session is ready to learn!',
-    icon: '✅',
+    icon: <CheckCircle className="w-6 h-6" />,
     color: 'text-emerald-500',
     bgColor: 'bg-emerald-50',
     borderColor: 'border-emerald-200'
@@ -65,7 +73,7 @@ const stageInfo = {
   error: {
     title: 'Error',
     description: 'Something went wrong during generation',
-    icon: '❌',
+    icon: <AlertCircle className="w-6 h-6" />,
     color: 'text-red-500',
     bgColor: 'bg-red-50',
     borderColor: 'border-red-200'
@@ -244,14 +252,15 @@ export default function SessionGenerationProgress({
           <div className="mt-4">
             <div className="flex justify-center space-x-4">
               {[
-                { key: 'validating', label: 'Validation', icon: '🔍' },
-                { key: 'fetching', label: 'Data', icon: '📊' },
-                { key: 'generating_structure', label: 'Structure', icon: '🧩' },
-                { key: 'generating_essay', label: 'Content', icon: '✍️' },
-                { key: 'saving', label: 'Save', icon: '💾' }
+                { key: 'validating', label: 'Validation', icon: <Search className="w-4 h-4" /> },
+                { key: 'fetching', label: 'Data', icon: <BarChart3 className="w-4 h-4" /> },
+                { key: 'generating_structure', label: 'Structure', icon: <Puzzle className="w-4 h-4" /> },
+                { key: 'generating_essay', label: 'Content', icon: <PenTool className="w-4 h-4" /> },
+                { key: 'generating_images', label: 'Images', icon: <Palette className="w-4 h-4" /> },
+                { key: 'saving', label: 'Save', icon: <Save className="w-4 h-4" /> }
               ].map((step, index) => {
                 const isActive = step.key === stage
-                const isCompleted = ['validating', 'fetching', 'generating_structure', 'generating_essay', 'saving'].indexOf(stage) > ['validating', 'fetching', 'generating_structure', 'generating_essay', 'saving'].indexOf(step.key)
+                const isCompleted = ['validating', 'fetching', 'generating_structure', 'generating_essay', 'generating_images', 'saving'].indexOf(stage) > ['validating', 'fetching', 'generating_structure', 'generating_essay', 'generating_images', 'saving'].indexOf(step.key)
                 
                 return (
                   <div

@@ -60,14 +60,53 @@ export default function SessionView({ params }: SessionViewProps) {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['overview', 'objectives', 'essay']))
   const [currentSection, setCurrentSection] = useState('overview')
 
+  // Validate parameters before parsing
+  if (!sessionNumber || !curriculumId) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Invalid URL</h1>
+          <p className="text-gray-600 mb-4">Missing curriculum ID or session number</p>
+          <div className="space-x-4">
+            <button 
+              onClick={() => router.push('/dashboard')}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+            >
+              Go to Dashboard
+            </button>
+            <button 
+              onClick={() => window.history.back()}
+              className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   const sessionNum = parseInt(sessionNumber)
 
   useEffect(() => {
+    // Validate session number
+    if (isNaN(sessionNum) || sessionNum < 1) {
+      setError('Invalid session number')
+      setLoading(false)
+      return
+    }
     fetchSession()
   }, [curriculumId, sessionNum])
 
   const fetchSession = async () => {
     try {
+      // Additional validation
+      if (isNaN(sessionNum) || sessionNum < 1) {
+        throw new Error('Invalid session number')
+      }
+
+      console.log('Fetching session:', { curriculumId, sessionNum })
+      
       const { data: sessionData, error: sessionError } = await supabase
         .from('learning_sessions')
         .select('*')
@@ -76,6 +115,7 @@ export default function SessionView({ params }: SessionViewProps) {
         .single()
 
       if (sessionError) {
+        console.error('Database error:', sessionError)
         throw new Error(`Failed to fetch session: ${sessionError.message}`)
       }
 
@@ -181,12 +221,20 @@ export default function SessionView({ params }: SessionViewProps) {
           <div className="text-red-500 text-xl mb-4">⚠️</div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Session Not Found</h1>
           <p className="text-gray-600 mb-4">{error || 'The requested session could not be found.'}</p>
-          <button
-            onClick={() => router.back()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Go Back
-          </button>
+          <div className="space-x-4">
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Go to Dashboard
+            </button>
+            <button
+              onClick={() => window.history.back()}
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              Go Back
+            </button>
+          </div>
         </div>
       </div>
     )
