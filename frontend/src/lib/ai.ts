@@ -982,7 +982,7 @@ REQUIREMENTS:
       
       // Add timeout for essay generation (longer since it's more complex)
       const essayTimeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Essay generation timeout')), 90000) // 90 second timeout
+        setTimeout(() => reject(new Error('Essay generation timeout')), 120000) // 120 second timeout
       })
       
       const essayResponsePromise = openai.chat.completions.create({
@@ -997,7 +997,7 @@ REQUIREMENTS:
             content: essayPrompt
           }
         ],
-        max_tokens: 16384,
+        max_tokens: 12000, // Reduced from 16384 to speed up generation
         temperature: 0.7,
       })
       
@@ -1016,9 +1016,24 @@ REQUIREMENTS:
       // Progress: 85% - Processing images (milestone)
       onProgress?.(85, 'Generating custom images for essay...', 'generating_images')
 
-      // Process images in the essay content
+      // Process images in the essay content with timeout
       console.log('Processing images in essay content...')
-      const processedEssay = await this.processEssayImages(essayContent.trim())
+      let processedEssay = essayContent.trim()
+      
+      try {
+        const imageTimeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Image processing timeout')), 30000) // 30 second timeout for images
+        })
+        
+        const imageProcessingPromise = this.processEssayImages(essayContent.trim())
+        processedEssay = await Promise.race([imageProcessingPromise, imageTimeoutPromise]) as string
+        console.log('Image processing completed successfully')
+      } catch (imageError) {
+        console.warn('Image processing timed out or failed, using essay without images:', imageError)
+        // Use the essay without images if image processing fails
+        processedEssay = essayContent.trim()
+      }
+      
       session.ai_essay = processedEssay
       
       // Check essay word count
