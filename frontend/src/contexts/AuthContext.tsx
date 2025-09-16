@@ -22,12 +22,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Get initial session with timeout
+    const sessionPromise = supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       setUser(session?.user ?? null)
       setLoading(false)
+    }).catch((error) => {
+      console.error('Error getting session:', error)
+      setLoading(false) // Still set loading to false even on error
     })
+
+    // Set a timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      console.warn('Auth session check timed out, setting loading to false')
+      setLoading(false)
+    }, 5000) // 5 second timeout
 
     // Listen for auth changes
     const {
@@ -42,7 +51,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Don't auto-redirect here - let the dashboard handle it naturally
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      clearTimeout(timeout)
+      subscription.unsubscribe()
+    }
   }, [])
 
   const signUp = async (email: string, password: string, firstName?: string) => {
