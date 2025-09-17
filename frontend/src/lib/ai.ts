@@ -75,7 +75,8 @@ export class AICurriculumGenerator {
   // Generate image using DALL-E 3
   async generateImageForEssay(prompt: string): Promise<string | null> {
     try {
-      console.log('Generating image with DALL-E 3:', prompt);
+      console.log('🎨 Generating image with DALL-E 3:', prompt);
+      console.log('🔑 OpenAI API key available:', !!process.env.OPENAI_API_KEY);
       
       // Add timeout for DALL-E generation
       const timeoutPromise = new Promise((_, reject) => {
@@ -91,22 +92,24 @@ export class AICurriculumGenerator {
         style: "natural"
       });
       
+      console.log('⏳ Calling DALL-E API...');
       const response = await Promise.race([imagePromise, timeoutPromise]) as any;
+      console.log('📥 DALL-E API response received:', !!response);
       
       if (!response || !response.data || !response.data[0]) {
-        console.error('DALL-E response is invalid:', response);
+        console.error('❌ DALL-E response is invalid:', response);
         return null;
       }
       
       const imageUrl = response.data[0].url;
-      console.log('DALL-E image generated successfully:', imageUrl);
+      console.log('✅ DALL-E image generated successfully:', imageUrl);
       return imageUrl || null;
     } catch (error) {
-      console.error('DALL-E generation failed:', error);
+      console.error('💥 DALL-E generation failed:', error);
       
       // Log specific error details
       if (error instanceof Error) {
-        console.error('DALL-E error details:', {
+        console.error('🔍 DALL-E error details:', {
           message: error.message,
           name: error.name,
           stack: error.stack
@@ -114,11 +117,15 @@ export class AICurriculumGenerator {
         
         // Handle specific OpenAI API errors
         if (error.message.includes('rate_limit_exceeded')) {
-          console.warn('DALL-E rate limit exceeded, skipping image generation');
+          console.warn('⚠️ DALL-E rate limit exceeded, skipping image generation');
         } else if (error.message.includes('content_policy_violation')) {
-          console.warn('DALL-E content policy violation, skipping image generation');
+          console.warn('⚠️ DALL-E content policy violation, skipping image generation');
         } else if (error.message.includes('timeout')) {
-          console.warn('DALL-E generation timed out, skipping image generation');
+          console.warn('⚠️ DALL-E generation timed out, skipping image generation');
+        } else if (error.message.includes('insufficient_quota')) {
+          console.warn('⚠️ DALL-E insufficient quota, skipping image generation');
+        } else if (error.message.includes('billing')) {
+          console.warn('⚠️ DALL-E billing issue, skipping image generation');
         }
       }
       
@@ -145,16 +152,20 @@ export class AICurriculumGenerator {
     const imagePrompts = this.extractImagePrompts(essayContent);
     let processedContent = essayContent;
     
-    console.log(`Processing ${imagePrompts.length} image prompts...`);
+    console.log(`🖼️ Processing ${imagePrompts.length} image prompts...`);
+    console.log('📝 Image prompts found:', imagePrompts);
     
     if (imagePrompts.length === 0) {
-      console.log('No image prompts found in essay content');
+      console.log('ℹ️ No image prompts found in essay content');
       return processedContent;
     }
     
+    let successCount = 0;
+    let failureCount = 0;
+    
     for (let i = 0; i < imagePrompts.length; i++) {
       const prompt = imagePrompts[i];
-      console.log(`Processing image prompt ${i + 1}/${imagePrompts.length}: "${prompt}"`);
+      console.log(`🎨 Processing image prompt ${i + 1}/${imagePrompts.length}: "${prompt}"`);
       
       try {
         const imageUrl = await this.generateImageForEssay(prompt);
@@ -164,23 +175,26 @@ export class AICurriculumGenerator {
           const promptPattern = `[IMAGE_PROMPT: "${prompt}"]`;
           const imageMarkdown = `![${prompt}](${imageUrl})`;
           processedContent = processedContent.replace(promptPattern, imageMarkdown);
-          console.log(`✅ Successfully replaced image prompt ${i + 1} with generated image`);
+          console.log(`✅ Successfully replaced image prompt ${i + 1} with generated image: ${imageUrl}`);
+          successCount++;
         } else {
           // Remove the prompt if image generation failed
           const promptPattern = `[IMAGE_PROMPT: "${prompt}"]`;
           processedContent = processedContent.replace(promptPattern, '');
           console.log(`❌ Failed to generate image for prompt ${i + 1}, removed prompt`);
+          failureCount++;
         }
       } catch (error) {
-        console.error(`Error processing image prompt ${i + 1}:`, error);
+        console.error(`💥 Error processing image prompt ${i + 1}:`, error);
         // Remove the prompt if there was an error
         const promptPattern = `[IMAGE_PROMPT: "${prompt}"]`;
         processedContent = processedContent.replace(promptPattern, '');
         console.log(`❌ Error processing image prompt ${i + 1}, removed prompt`);
+        failureCount++;
       }
     }
     
-    console.log(`Image processing completed. Processed ${imagePrompts.length} prompts.`);
+    console.log(`🖼️ Image processing completed. Success: ${successCount}, Failures: ${failureCount}, Total: ${imagePrompts.length}`);
     return processedContent;
   }
 
