@@ -969,7 +969,7 @@ REQUIREMENTS:
       
       // Add timeout for session structure generation
       const structureTimeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Session structure generation timeout')), 20000) // 20 second timeout
+        setTimeout(() => reject(new Error('Session structure generation timeout')), 60000) // 60 second timeout
       })
       
       const sessionResponsePromise = openai.chat.completions.create({
