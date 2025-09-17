@@ -16,13 +16,16 @@ import {
   Brain,
   Zap,
   TrendingUp,
-  User
+  User,
+  Sparkles,
+  Star
 } from 'lucide-react';
 import Logo from '@/components/Logo';
 
 export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [showComingSoonModal, setShowComingSoonModal] = useState(false);
   const { scrollY } = useScroll();
   const y = useTransform(scrollY, [0, 300], [0, -50]);
   const router = useRouter();
@@ -215,13 +218,7 @@ export default function LandingPage() {
               </motion.button>
 
               <motion.button
-                onClick={() => {
-                  // Scroll to the "How It Works" section
-                  const howItWorksSection = document.getElementById('how-it-works');
-                  if (howItWorksSection) {
-                    howItWorksSection.scrollIntoView({ behavior: 'smooth' });
-                  }
-                }}
+                onClick={() => setShowComingSoonModal(true)}
                 className="group px-8 py-4 bg-black bg-opacity-30 backdrop-blur-md text-white border-2 border-white border-opacity-70 rounded-xl font-semibold text-lg shadow-2xl hover:shadow-3xl hover:bg-opacity-50 hover:border-opacity-90 transition-all duration-300 flex items-center space-x-2"
                 whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95 }}
@@ -567,6 +564,140 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* Coming Soon Modal */}
+      {showComingSoonModal && (
+        <motion.div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={() => setShowComingSoonModal(false)}
+        >
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          
+          {/* Modal Content */}
+          <motion.div
+            className="relative bg-white rounded-3xl shadow-2xl max-w-md w-full mx-4 overflow-hidden"
+            initial={{ scale: 0.8, opacity: 0, y: 50 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.8, opacity: 0, y: 50 }}
+            transition={{ type: "spring", duration: 0.5 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Animated Background */}
+            <div className="absolute inset-0 bg-gradient-to-br from-yellow-400 via-yellow-500 to-yellow-600 opacity-10" />
+            
+            {/* Floating Sparkles */}
+            <div className="absolute inset-0 overflow-hidden">
+              {[...Array(6)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute w-2 h-2 bg-yellow-400 rounded-full"
+                  style={{
+                    left: `${20 + i * 15}%`,
+                    top: `${20 + (i % 3) * 30}%`,
+                  }}
+                  animate={{
+                    y: [0, -20, 0],
+                    opacity: [0.3, 1, 0.3],
+                    scale: [0.5, 1, 0.5],
+                  }}
+                  transition={{
+                    duration: 2 + i * 0.3,
+                    repeat: Infinity,
+                    delay: i * 0.2,
+                  }}
+                />
+              ))}
+            </div>
+
+            {/* Close Button */}
+            <button
+              onClick={() => setShowComingSoonModal(false)}
+              className="absolute top-4 right-4 z-20 p-2 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Content */}
+            <div className="relative z-10 p-8 text-center">
+              {/* Icon with Animation */}
+              <motion.div
+                className="mb-6"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+              >
+                <div className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center mx-auto shadow-lg">
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                  >
+                    <Sparkles className="w-10 h-10 text-white" />
+                  </motion.div>
+                </div>
+              </motion.div>
+
+              {/* Title */}
+              <motion.h2
+                className="text-3xl font-bold text-gray-900 mb-4"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                Coming Soon!
+              </motion.h2>
+
+              {/* Subtitle */}
+              <motion.p
+                className="text-lg text-gray-600 mb-6"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+              >
+                We're working hard to bring you an amazing demo experience. Stay tuned!
+              </motion.p>
+
+              {/* Animated Progress Bar */}
+              <motion.div
+                className="mb-6"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+              >
+                <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                  <motion.div
+                    className="h-full bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-full"
+                    initial={{ width: "0%" }}
+                    animate={{ width: "75%" }}
+                    transition={{ duration: 2, delay: 0.6 }}
+                  />
+                </div>
+                <p className="text-sm text-gray-500 mt-2">Development Progress: 75%</p>
+              </motion.div>
+
+              {/* Action Button */}
+              <motion.div
+                className="flex justify-center"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7 }}
+              >
+                <motion.button
+                  onClick={() => setShowComingSoonModal(false)}
+                  className="px-8 py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-colors border border-gray-300"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  Got it!
+                </motion.button>
+              </motion.div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
     </div>
   );
 }
