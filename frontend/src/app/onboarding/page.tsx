@@ -194,8 +194,20 @@ function OnboardingContent() {
       const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition
       recognitionRef.current = new SpeechRecognition()
       if (recognitionRef.current) {
-        recognitionRef.current.continuous = true
-        recognitionRef.current.interimResults = true
+        // Detect mobile device
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+        
+        // Configure differently for mobile vs desktop
+        if (isMobile) {
+          // Mobile: Use non-continuous mode to avoid repetition issues
+          recognitionRef.current.continuous = false
+          recognitionRef.current.interimResults = true
+        } else {
+          // Desktop: Use continuous mode for better experience
+          recognitionRef.current.continuous = true
+          recognitionRef.current.interimResults = true
+        }
+        
         recognitionRef.current.lang = 'en-US'
 
         recognitionRef.current.onresult = (event) => {
@@ -203,14 +215,30 @@ function OnboardingContent() {
           let interimTranscript = ''
           let newFinalTranscript = ''
           
-          // Process results starting from the resultIndex (for continuous mode)
-          for (let i = event.resultIndex; i < event.results.length; i++) {
-            const transcript = event.results[i][0].transcript
-            console.log('Transcript:', transcript, 'isFinal:', event.results[i].isFinal)
-            if (event.results[i].isFinal) {
-              newFinalTranscript += transcript
-            } else {
-              interimTranscript += transcript
+          // Process results - handle mobile vs desktop differently
+          const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+          
+          if (isMobile) {
+            // Mobile: Process all results to avoid duplication
+            for (let i = 0; i < event.results.length; i++) {
+              const transcript = event.results[i][0].transcript
+              console.log('Mobile transcript:', transcript, 'isFinal:', event.results[i].isFinal)
+              if (event.results[i].isFinal) {
+                newFinalTranscript += transcript
+              } else {
+                interimTranscript += transcript
+              }
+            }
+          } else {
+            // Desktop: Process results starting from the resultIndex (for continuous mode)
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+              const transcript = event.results[i][0].transcript
+              console.log('Desktop transcript:', transcript, 'isFinal:', event.results[i].isFinal)
+              if (event.results[i].isFinal) {
+                newFinalTranscript += transcript
+              } else {
+                interimTranscript += transcript
+              }
             }
           }
 
@@ -270,6 +298,15 @@ function OnboardingContent() {
 
         recognitionRef.current.onerror = (event) => {
           console.log('Speech recognition error:', event.error)
+          const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+          
+          // On mobile, some errors are recoverable (like 'no-speech')
+          if (isMobile && (event.error === 'no-speech' || event.error === 'audio-capture')) {
+            console.log('Mobile: Recoverable error, will retry')
+            // Don't immediately stop listening for recoverable errors on mobile
+            return
+          }
+          
           setIsListening(false)
           setIsProcessing(false)
         }
@@ -277,6 +314,8 @@ function OnboardingContent() {
         recognitionRef.current.onend = () => {
           // Ensure final transcript is saved when recognition ends (timeout or manual stop)
           const activeField = currentFieldRef.current
+          const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+          
           if (activeField && activeField in data.personalBackground && activeField !== 'goals') {
             const existingContent = existingContentRef.current
             const accumulatedFinal = finalTranscriptRef.current
@@ -309,12 +348,36 @@ function OnboardingContent() {
               }
             }
           }
+          
           setIsListening(false)
           setIsProcessing(false)
+          
           // Clear the timeout when recognition ends
           if (timeoutRef.current) {
             clearTimeout(timeoutRef.current)
             timeoutRef.current = null
+          }
+          
+          // For mobile devices, reset the final transcript to prevent accumulation issues
+          if (isMobile) {
+            finalTranscriptRef.current = ''
+            
+            // On mobile, if we're still supposed to be listening, restart recognition
+            // This handles cases where mobile browsers end recognition unexpectedly
+            if (isListening && recognitionRef.current) {
+              console.log('Mobile: Restarting recognition after unexpected end')
+              setTimeout(() => {
+                if (recognitionRef.current && isListening) {
+                  try {
+                    recognitionRef.current.start()
+                  } catch (error) {
+                    console.log('Failed to restart recognition on mobile:', error)
+                    setIsListening(false)
+                    setIsProcessing(false)
+                  }
+                }
+              }, 100) // Small delay to prevent rapid restarts
+            }
           }
         }
       }
@@ -352,13 +415,16 @@ function OnboardingContent() {
       console.log('Starting speech recognition with existing content:', existingContentRef.current)
       recognitionRef.current.start()
       
-      // Set a longer timeout (120 seconds) to allow for longer pauses
+      // Set different timeouts for mobile vs desktop
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+      const timeoutDuration = isMobile ? 30000 : 120000 // 30 seconds for mobile, 2 minutes for desktop
+      
       timeoutRef.current = setTimeout(() => {
         if (recognitionRef.current && isListening) {
           console.log('Timeout reached, stopping recognition')
           recognitionRef.current.stop()
         }
-      }, 120000) // 120 seconds (2 minutes)
+      }, timeoutDuration)
     } else {
       console.log('Cannot start voice input:', { hasRecognition: !!recognitionRef.current, isListening })
     }
