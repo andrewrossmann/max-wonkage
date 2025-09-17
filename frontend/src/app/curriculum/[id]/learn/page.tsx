@@ -360,7 +360,8 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
               discussion_prompts: session.discussion_prompts || [],
               ai_essay: session.ai_essay,
               content_density: session.content_density,
-              session_type: session.session_type
+              session_type: session.session_type,
+              completed: session.completed || false
             })))
           }
         } catch (refreshError) {
@@ -371,13 +372,17 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
   }
 
   const toggleSessionExpansion = (sessionNumber: number) => {
+    console.log('=== TOGGLE SESSION EXPANSION ===', { sessionNumber, currentExpanded: Array.from(expandedSessions) })
     setExpandedSessions(prev => {
       const newSet = new Set(prev)
       if (newSet.has(sessionNumber)) {
         newSet.delete(sessionNumber)
+        console.log('Removing session from expanded:', sessionNumber)
       } else {
         newSet.add(sessionNumber)
+        console.log('Adding session to expanded:', sessionNumber)
       }
+      console.log('New expanded sessions:', Array.from(newSet))
       return newSet
     })
   }
