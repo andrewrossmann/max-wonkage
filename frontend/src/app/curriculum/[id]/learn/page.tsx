@@ -787,7 +787,7 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
                                 onClick={() => toggleSessionExpansion(sessionNumber)}
                                 className="px-3 py-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium"
                               >
-                                {isExpanded ? 'Hide' : 'View'} Content
+                                {isExpanded ? 'Hide' : 'View'} Preview
                               </button>
                               <button
                                 onClick={() => handleStartSession(existingSession!.id, sessionNumber)}
