@@ -82,7 +82,7 @@ export default function LandingPage() {
               <a href="#about" className={`${isScrolled ? 'text-gray-800' : 'text-white'} hover:text-yellow-400 transition-colors font-medium`}>About</a>
               <a href="#how-it-works" className={`${isScrolled ? 'text-gray-800' : 'text-white'} hover:text-yellow-400 transition-colors font-medium`}>How it Works</a>
               <a href="#features" className={`${isScrolled ? 'text-gray-800' : 'text-white'} hover:text-yellow-400 transition-colors font-medium`}>Features</a>
-              <a href="#contact" className={`${isScrolled ? 'text-gray-800' : 'text-white'} hover:text-yellow-400 transition-colors font-medium`}>Contact</a>
+              <a href="mailto:andrewrossmann@gmail.com" className={`${isScrolled ? 'text-gray-800' : 'text-white'} hover:text-yellow-400 transition-colors font-medium`}>Contact</a>
               <motion.button
                 onClick={() => router.push('/login')}
                 className="px-6 py-2 bg-yellow-400 text-black rounded-lg hover:bg-yellow-300 transition-all duration-200 font-semibold shadow-lg"
@@ -135,7 +135,7 @@ export default function LandingPage() {
                     Features
                   </a>
                   <a 
-                    href="#contact" 
+                    href="mailto:andrewrossmann@gmail.com" 
                     className="text-gray-800 hover:text-yellow-600 hover:bg-yellow-50 transition-all duration-200 font-medium px-3 py-2 rounded-lg text-center text-sm"
                     onClick={() => setIsMenuOpen(false)}
                   >
@@ -546,7 +546,7 @@ export default function LandingPage() {
               <h3 className="text-lg font-semibold mb-4">Support</h3>
               <ul className="space-y-2 text-gray-400">
                 <li><a href="#" className="hover:text-white transition-colors">Help Center</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contact Us</a></li>
+                <li><a href="mailto:andrewrossmann@gmail.com" className="hover:text-white transition-colors">Contact Us</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
               </ul>
             </div>
