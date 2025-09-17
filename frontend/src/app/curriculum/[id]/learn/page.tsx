@@ -201,11 +201,13 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
 
         for (const line of lines) {
           if (line.startsWith('data: ')) {
+            console.log('Received SSE line:', line)
             try {
               const jsonString = line.slice(6).trim()
               
               // Skip empty or malformed data
               if (!jsonString || jsonString === '') {
+                console.log('Skipping empty SSE data')
                 continue
               }
               
@@ -252,6 +254,7 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
               }
               
               const data = JSON.parse(validJson)
+              console.log('Parsed SSE data:', data)
               
               // Update progress
               setSessionProgress(prev => ({
@@ -265,10 +268,15 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
               }))
 
               // If complete, add session to list and expand
-              if (data.stage === 'complete' && data.data) {
-                console.log('Session generation complete, adding to list:', data.data)
-                setSessions(prev => [...prev, data.data])
-                setExpandedSessions(prev => new Set(prev).add(sessionNumber))
+              if (data.stage === 'complete') {
+                console.log('Session generation complete!', { stage: data.stage, hasData: !!data.data, data: data.data })
+                if (data.data) {
+                  console.log('Adding session to list:', data.data)
+                  setSessions(prev => [...prev, data.data])
+                  setExpandedSessions(prev => new Set(prev).add(sessionNumber))
+                } else {
+                  console.log('No session data in completion message')
+                }
               }
 
               // If error, show error message
