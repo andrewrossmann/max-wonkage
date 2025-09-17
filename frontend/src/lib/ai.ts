@@ -78,6 +78,12 @@ export class AICurriculumGenerator {
       console.log('🎨 Generating image with DALL-E 3:', prompt);
       console.log('🔑 OpenAI API key available:', !!process.env.OPENAI_API_KEY);
       
+      // Check if OpenAI API key is available
+      if (!process.env.OPENAI_API_KEY) {
+        console.warn('⚠️ OpenAI API key not available, skipping image generation');
+        return null;
+      }
+      
       // Add timeout for DALL-E generation
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => reject(new Error('DALL-E generation timeout')), 45000) // 45 second timeout
@@ -1085,24 +1091,28 @@ REQUIREMENTS:
       
       // Check if image generation is disabled via environment variable
       const imageGenerationEnabled = process.env.ENABLE_IMAGE_GENERATION !== 'false'
+      const hasOpenAIKey = !!process.env.OPENAI_API_KEY
       
-      if (!imageGenerationEnabled) {
-        console.log('Image generation disabled via environment variable, skipping image processing')
+      console.log('Image generation settings:', { imageGenerationEnabled, hasOpenAIKey })
+      
+      if (!imageGenerationEnabled || !hasOpenAIKey) {
+        console.log('Image generation disabled or no OpenAI key, removing image prompts')
         // Remove all image prompts without generating images
         processedEssay = essayContent.replace(/\[IMAGE_PROMPT:\s*"[^"]+"\]/g, '')
       } else {
         try {
+          console.log('Starting image processing...')
           const imageTimeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('Image processing timeout')), 30000) // 30 second timeout for images
+            setTimeout(() => reject(new Error('Image processing timeout')), 60000) // Increased to 60 seconds
           })
           
           const imageProcessingPromise = this.processEssayImages(essayContent.trim())
           processedEssay = await Promise.race([imageProcessingPromise, imageTimeoutPromise]) as string
           console.log('Image processing completed successfully')
         } catch (imageError) {
-          console.warn('Image processing timed out or failed, using essay without images:', imageError)
-          // Use the essay without images if image processing fails
-          processedEssay = essayContent.trim()
+          console.warn('Image processing timed out or failed, removing image prompts:', imageError)
+          // Remove image prompts if processing fails instead of keeping them
+          processedEssay = essayContent.replace(/\[IMAGE_PROMPT:\s*"[^"]+"\]/g, '')
         }
       }
       
