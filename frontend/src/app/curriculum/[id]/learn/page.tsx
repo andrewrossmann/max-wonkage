@@ -24,6 +24,7 @@ import {
 } from 'lucide-react'
 
 export default function LearningPage({ params }: { params: Promise<{ id: string }> }) {
+  console.log('=== LEARNING PAGE COMPONENT RENDERED ===')
   const { user, session, loading, signOut } = useAuth()
   const router = useRouter()
   const [curriculum, setCurriculum] = useState<Curriculum | null>(null)
@@ -152,7 +153,7 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
   }
 
   const handleGenerateSession = async (sessionNumber: number) => {
-    console.log('=== GENERATE SESSION CLICKED ===', { sessionNumber, user: !!user, session: !!session, curriculum: !!curriculum })
+    console.log('=== GENERATE SESSION FUNCTION CALLED ===', { sessionNumber, user: !!user, session: !!session, curriculum: !!curriculum })
     
     if (!user || !session?.access_token || !curriculum) {
       console.log('Missing required data:', { user: !!user, session: !!session, curriculum: !!curriculum })
