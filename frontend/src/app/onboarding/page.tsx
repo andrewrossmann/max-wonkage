@@ -906,7 +906,7 @@ function PersonalBackgroundStep({
     {
       id: 'goals',
       label: 'Preferred Way You Like to Learn',
-      placeholder: 'How do you want your learning sessions to be structured? Default is:\n    • Written Essay\n    • Case studies/examples\n    • Optional video resources\n    • References for further study\n    • Discussion questions'
+      placeholder: 'How do you want your learning sessions to be structured? Default includes: Written Essay, Case studies/examples, Optional video resources, References for further study, Discussion questions'
     }
   ]
 
@@ -939,7 +939,11 @@ function PersonalBackgroundStep({
                 onChange={(e) => updateData({ [field.id]: e.target.value })}
                 placeholder={field.placeholder}
                 rows={4}
-                className="w-full px-4 py-2 pr-20 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 resize-none"
+                className="w-full px-4 py-2 pr-20 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 resize-none overflow-y-auto"
+                style={{
+                  WebkitOverflowScrolling: 'touch',
+                  scrollBehavior: 'smooth'
+                }}
               />
               <div className="absolute right-2 bottom-2 flex space-x-1">
                 <button
@@ -1222,7 +1226,11 @@ function SkillLevelStep({
               onChange={(e) => updateData({ goals: e.target.value })}
               placeholder="What do you want to achieve? (e.g., Build a web app, Have conversations in Spanish, Write a novel...)"
               rows={4}
-              className="w-full px-4 py-2 pr-20 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 resize-none"
+              className="w-full px-4 py-2 pr-20 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 resize-none overflow-y-auto"
+              style={{
+                WebkitOverflowScrolling: 'touch',
+                scrollBehavior: 'smooth'
+              }}
             />
             <div className="absolute right-2 bottom-2 flex space-x-1">
               <button
@@ -1513,8 +1521,12 @@ function PromptReviewStep({ prompt, onPromptChange, onComplete, onReturnToOrigin
             id="prompt"
             value={prompt}
             onChange={(e) => onPromptChange(e.target.value)}
-            className="w-full h-96 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 resize-none font-mono text-sm"
+            className="w-full h-96 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 resize-none font-mono text-sm overflow-y-auto"
             placeholder="Your AI prompt will appear here..."
+            style={{
+              WebkitOverflowScrolling: 'touch',
+              scrollBehavior: 'smooth'
+            }}
           />
           <div className="mt-2 flex justify-between items-center">
             <p className="text-sm text-gray-500">
