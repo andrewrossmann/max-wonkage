@@ -8,6 +8,7 @@ import Logo from '@/components/Logo'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
 import SessionGenerationProgress from '@/components/SessionGenerationProgress'
 import { Curriculum, LearningSession, getCurriculumSessions, markSessionComplete, markSessionIncomplete } from '@/lib/database'
+import { supabase } from '@/lib/supabase'
 import { 
   BookOpen, 
   Clock, 
@@ -265,6 +266,7 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
 
               // If complete, add session to list and expand
               if (data.stage === 'complete' && data.data) {
+                console.log('Session generation complete, adding to list:', data.data)
                 setSessions(prev => [...prev, data.data])
                 setExpandedSessions(prev => new Set(prev).add(sessionNumber))
               }
@@ -313,6 +315,40 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
         newSet.delete(sessionNumber)
         return newSet
       })
+      
+      // Fallback: Refresh sessions list after generation completes
+      // This ensures the UI updates even if SSE completion message wasn't received
+      setTimeout(async () => {
+        try {
+          console.log('Refreshing sessions list as fallback...')
+          const { data: sessions, error: sessionsError } = await supabase
+            .from('learning_sessions')
+            .select('*')
+            .eq('curriculum_id', curriculum.id)
+            .order('session_number')
+
+          if (!sessionsError && sessions) {
+            console.log('Sessions refreshed:', sessions.length)
+            setSessions(sessions.map(session => ({
+              ...session.content,
+              id: session.id,
+              session_number: session.session_number,
+              title: session.title,
+              description: session.description,
+              estimated_reading_time: session.estimated_reading_time,
+              recommended_readings: session.resources?.recommended_readings || [],
+              case_studies: session.resources?.case_studies || [],
+              video_resources: session.resources?.video_resources || [],
+              discussion_prompts: session.discussion_prompts || [],
+              ai_essay: session.ai_essay,
+              content_density: session.content_density,
+              session_type: session.session_type
+            })))
+          }
+        } catch (refreshError) {
+          console.error('Error refreshing sessions:', refreshError)
+        }
+      }, 2000) // Wait 2 seconds after generation completes
     }
   }
 
