@@ -13,6 +13,17 @@ export default function PricingPage() {
   const [isScrolled, setIsScrolled] = useState(false);
   const router = useRouter();
 
+  const navigateToSection = (sectionId: string) => {
+    router.push('/');
+    // Wait for navigation to complete, then scroll to section
+    setTimeout(() => {
+      const element = document.getElementById(sectionId);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 100);
+  };
+
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
@@ -331,15 +342,15 @@ export default function PricingPage() {
             <div>
               <h3 className="text-lg font-semibold mb-4">Product</h3>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">Features</a></li>
+                <li><button onClick={() => navigateToSection('features')} className="hover:text-white transition-colors text-left">Features</button></li>
                 <li><a href="/pricing" className="hover:text-white transition-colors">Pricing</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">How it Works</a></li>
+                <li><button onClick={() => navigateToSection('how-it-works')} className="hover:text-white transition-colors text-left">How it Works</button></li>
               </ul>
             </div>
             <div>
               <h3 className="text-lg font-semibold mb-4">Support</h3>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">Help Center</a></li>
+                <li><a href="mailto:andrewrossmann@gmail.com" className="hover:text-white transition-colors">Help Center</a></li>
                 <li><a href="mailto:andrewrossmann@gmail.com" className="hover:text-white transition-colors">Contact Us</a></li>
                 <li><a href="/privacy" className="hover:text-white transition-colors">Privacy Policy</a></li>
               </ul>
@@ -347,7 +358,7 @@ export default function PricingPage() {
             <div>
               <h3 className="text-lg font-semibold mb-4">Company</h3>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">About</a></li>
+                <li><button onClick={() => navigateToSection('about')} className="hover:text-white transition-colors text-left">About</button></li>
                 <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Careers</a></li>
               </ul>
