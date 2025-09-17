@@ -66,7 +66,7 @@ npm install
 
 | Feature | Local | Production |
 |---------|-------|------------|
-| URL | `localhost:3000` | `maxwonkage.vercel.app` |
+| URL | `localhost:3000` | `max-wonkage.vercel.app` |
 | Auth | Same Supabase | Same Supabase |
 | Images | DALL-E (if enabled) | DALL-E |
 | Database | Same Supabase | Same Supabase |
