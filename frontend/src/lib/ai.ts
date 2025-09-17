@@ -984,7 +984,7 @@ REQUIREMENTS:
             content: sessionPrompt
           }
         ],
-        max_tokens: 2000,
+        max_tokens: 3000,
         temperature: 0.7,
       })
       
@@ -1029,9 +1029,9 @@ REQUIREMENTS:
       
       console.log('Calling OpenAI for essay generation with max_tokens: 16384...')
       
-      // Add timeout for essay generation (reduced for faster generation)
+      // Add timeout for essay generation
       const essayTimeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Essay generation timeout')), 60000) // 60 second timeout
+        setTimeout(() => reject(new Error('Essay generation timeout')), 90000) // 90 second timeout
       })
       
       const essayResponsePromise = openai.chat.completions.create({
@@ -1039,14 +1039,14 @@ REQUIREMENTS:
         messages: [
           {
             role: 'system',
-            content: 'You are an expert educational content writer. Write comprehensive, detailed essays that serve as the main learning material for educational sessions. Your essays should be 2,000-3,000 words of detailed, educational content with examples, explanations, and practical guidance.'
+            content: 'You are an expert educational content writer. Write comprehensive, detailed essays that serve as the main learning material for educational sessions. Your essays should be 3,000-4,000 words of detailed, educational content with examples, explanations, and practical guidance.'
           },
           {
             role: 'user',
             content: essayPrompt
           }
         ],
-        max_tokens: 8000, // Further reduced to speed up generation
+        max_tokens: 12000, // Restored to reasonable level
         temperature: 0.7,
       })
       
@@ -1069,8 +1069,8 @@ REQUIREMENTS:
       console.log('Processing images in essay content...')
       let processedEssay = essayContent.trim()
       
-      // Check if image generation is disabled via environment variable (disabled by default for speed)
-      const imageGenerationEnabled = process.env.ENABLE_IMAGE_GENERATION === 'true'
+      // Check if image generation is disabled via environment variable
+      const imageGenerationEnabled = process.env.ENABLE_IMAGE_GENERATION !== 'false'
       
       if (!imageGenerationEnabled) {
         console.log('Image generation disabled via environment variable, skipping image processing')
