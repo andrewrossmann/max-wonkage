@@ -277,13 +277,13 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
                 }
               }))
 
-              // If complete, add session to list and expand
+              // If complete, fetch full session data and add to list
               if (data.stage === 'complete') {
                 console.log('Session generation complete!', { stage: data.stage, hasData: !!data.data, data: data.data })
                 if (data.data) {
-                  console.log('Adding session to list:', data.data)
-                  setSessions(prev => [...prev, data.data])
-                  setExpandedSessions(prev => new Set(prev).add(sessionNumber))
+                  console.log('Fetching full session data for:', data.data.id)
+                  // Fetch the complete session data from database
+                  fetchFullSessionData(data.data.id, sessionNumber)
                 } else {
                   console.log('No session data in completion message')
                 }
@@ -335,6 +335,49 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
       })
       
       // Note: Removed fallback refresh - SSE completion should work properly now
+    }
+  }
+
+  const fetchFullSessionData = async (sessionId: string, sessionNumber: number) => {
+    try {
+      console.log('Fetching full session data from database...')
+      const { data: sessionData, error } = await supabase
+        .from('learning_sessions')
+        .select('*')
+        .eq('id', sessionId)
+        .single()
+
+      if (error) {
+        console.error('Error fetching session data:', error)
+        return
+      }
+
+      if (sessionData) {
+        console.log('Full session data fetched:', sessionData)
+        // Map the session data to the expected format
+        const mappedSession = {
+          ...sessionData.content,
+          id: sessionData.id,
+          session_number: sessionData.session_number,
+          title: sessionData.title,
+          description: sessionData.description,
+          estimated_reading_time: sessionData.estimated_reading_time,
+          recommended_readings: sessionData.resources?.recommended_readings || [],
+          case_studies: sessionData.resources?.case_studies || [],
+          video_resources: sessionData.resources?.video_resources || [],
+          discussion_prompts: sessionData.discussion_prompts || [],
+          ai_essay: sessionData.ai_essay,
+          content_density: sessionData.content_density,
+          session_type: sessionData.session_type,
+          completed: sessionData.completed || false
+        }
+
+        console.log('Adding full session to list:', mappedSession)
+        setSessions(prev => [...prev, mappedSession])
+        setExpandedSessions(prev => new Set(prev).add(sessionNumber))
+      }
+    } catch (error) {
+      console.error('Error in fetchFullSessionData:', error)
     }
   }
 

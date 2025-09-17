@@ -241,12 +241,17 @@ async function generateSessionWithProgress(
       throw new Error(`Failed to save session: ${insertError.message}`)
     }
 
-    // Stage 5: Complete (100%)
+    // Stage 5: Complete (100%) - Send completion without large data
     sendProgress({
       stage: 'complete',
       progress: 100,
       message: 'Session generated successfully!',
-      data: newSession
+      data: {
+        id: newSession.id,
+        session_number: newSession.session_number,
+        title: newSession.title,
+        description: newSession.description
+      }
     })
 
     controller.close()
