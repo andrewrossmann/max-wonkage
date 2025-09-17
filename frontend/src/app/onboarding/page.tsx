@@ -934,37 +934,54 @@ function PersonalBackgroundStep({
               {field.label}
             </label>
             <div className="relative">
-              <textarea
-                value={data[field.id] || ''}
-                onChange={(e) => updateData({ [field.id]: e.target.value })}
-                placeholder={field.placeholder}
-                rows={4}
-                className="w-full px-4 py-2 pr-20 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 resize-none overflow-y-auto"
-                style={{
-                  WebkitOverflowScrolling: 'touch',
-                  scrollBehavior: 'smooth'
-                }}
-              />
-              <div className="absolute right-2 bottom-2 flex space-x-1">
-                <button
-                  onClick={() => handleVoiceInput(field.id)}
-                  className={`p-2 rounded-full transition-colors ${
-                    isListening && currentField === field.id
-                      ? 'bg-red-500 text-white animate-pulse hover:bg-red-600' 
-                      : isProcessing && currentField === field.id
-                      ? 'bg-gray-300 text-gray-500 hover:bg-gray-400'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                  title={isListening && currentField === field.id ? 'Stop recording' : isProcessing && currentField === field.id ? 'Stop processing' : 'Start voice input'}
-                >
-                  {isProcessing && currentField === field.id ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : isListening && currentField === field.id ? (
-                    <MicOff className="w-4 h-4" />
-                  ) : (
-                    <Mic className="w-4 h-4" />
-                  )}
-                </button>
+              <div className="relative">
+                <textarea
+                  value={data[field.id] || ''}
+                  onChange={(e) => updateData({ [field.id]: e.target.value })}
+                  placeholder={field.placeholder}
+                  rows={4}
+                  className="w-full px-4 py-2 pr-20 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 resize-none"
+                  style={{
+                    overflowY: 'scroll',
+                    WebkitOverflowScrolling: 'touch',
+                    scrollBehavior: 'smooth',
+                    minHeight: '100px',
+                    maxHeight: '200px',
+                    wordWrap: 'break-word',
+                    whiteSpace: 'pre-wrap',
+                    paddingRight: '60px',
+                    touchAction: 'pan-y'
+                  }}
+                  onTouchStart={(e) => {
+                    // Ensure the textarea can be scrolled on mobile
+                    e.currentTarget.focus()
+                  }}
+                  onTouchMove={(e) => {
+                    // Allow scrolling but prevent other touch behaviors
+                    e.stopPropagation()
+                  }}
+                />
+                <div className="absolute right-2 bottom-2 flex space-x-1 z-10">
+                  <button
+                    onClick={() => handleVoiceInput(field.id)}
+                    className={`p-2 rounded-full transition-colors ${
+                      isListening && currentField === field.id
+                        ? 'bg-red-500 text-white animate-pulse hover:bg-red-600' 
+                        : isProcessing && currentField === field.id
+                        ? 'bg-gray-300 text-gray-500 hover:bg-gray-400'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                    title={isListening && currentField === field.id ? 'Stop recording' : isProcessing && currentField === field.id ? 'Stop processing' : 'Start voice input'}
+                  >
+                    {isProcessing && currentField === field.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : isListening && currentField === field.id ? (
+                      <MicOff className="w-4 h-4" />
+                    ) : (
+                      <Mic className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
             {isListening && currentField === field.id && (
