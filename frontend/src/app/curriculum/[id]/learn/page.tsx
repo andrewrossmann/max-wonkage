@@ -830,6 +830,8 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
 
                       {/* Expanded Session Content */}
                       {isGenerated && isExpanded && existingSession && (
+                        console.log('Rendering expanded content for session:', sessionNumber, 'Session data:', existingSession) || true
+                      ) && (
                         <motion.div
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
@@ -838,19 +840,20 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
                         >
                           <div className="space-y-4">
                             {/* Session Overview */}
-                            {existingSession.content?.overview && (
+                            {(existingSession.content?.overview || existingSession.overview) && (
                               <div>
                                 <h4 className="font-medium text-gray-900 mb-2">Overview</h4>
-                                <p className="text-sm text-gray-700">{existingSession.content.overview}</p>
+                                <p className="text-sm text-gray-700">{existingSession.content?.overview || existingSession.overview}</p>
                               </div>
                             )}
 
                             {/* Learning Objectives */}
-                            {existingSession.content?.learning_objectives && existingSession.content.learning_objectives.length > 0 && (
+                            {((existingSession.content?.learning_objectives && existingSession.content.learning_objectives.length > 0) || 
+                              (existingSession.learning_objectives && existingSession.learning_objectives.length > 0)) && (
                               <div>
                                 <h4 className="font-medium text-gray-900 mb-2">Learning Objectives</h4>
                                 <ul className="text-sm text-gray-700 space-y-1">
-                                  {existingSession.content.learning_objectives.map((objective: string, idx: number) => (
+                                  {(existingSession.content?.learning_objectives || existingSession.learning_objectives || []).map((objective: string, idx: number) => (
                                     <li key={idx} className="flex items-start space-x-2">
                                       <Target className="w-3 h-3 text-yellow-500 mt-1 flex-shrink-0" />
                                       <span>{objective}</span>
@@ -861,7 +864,7 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
                             )}
 
                             {/* AI Essay Preview */}
-                            {existingSession.content?.ai_essay && (
+                            {(existingSession.content?.ai_essay || existingSession.ai_essay) && (
                               <div>
                                 <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
                                   <BookOpen className="w-4 h-4 mr-2 text-purple-600" />
@@ -873,7 +876,7 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
                                 </h4>
                                 <div className="text-sm p-4 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-lg border-l-4 border-purple-400 max-h-40 overflow-y-auto shadow-sm">
                                   <MarkdownRenderer 
-                                    content={existingSession.content.ai_essay.substring(0, 500) + (existingSession.content.ai_essay.length > 500 ? '...' : '')} 
+                                    content={(existingSession.content?.ai_essay || existingSession.ai_essay || '').substring(0, 500) + ((existingSession.content?.ai_essay || existingSession.ai_essay || '').length > 500 ? '...' : '')} 
                                     className="prose-sm"
                                   />
                                 </div>
