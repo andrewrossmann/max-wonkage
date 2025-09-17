@@ -47,6 +47,9 @@ async function generateSessionWithProgress(
   }
 
   try {
+    console.log('=== SESSION GENERATION START ===')
+    console.log('Request details:', { curriculumId, sessionNumber, userId })
+    
     // Stage 1: Validation (5%)
     sendProgress({
       stage: 'validating',
@@ -54,18 +57,40 @@ async function generateSessionWithProgress(
       message: 'Initializing session generation...'
     })
 
+    // Check environment variables
+    console.log('Environment check:')
+    console.log('- NEXT_PUBLIC_SUPABASE_URL:', !!process.env.NEXT_PUBLIC_SUPABASE_URL)
+    console.log('- NEXT_PUBLIC_SUPABASE_ANON_KEY:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+    console.log('- OPENAI_API_KEY:', !!process.env.OPENAI_API_KEY)
+    console.log('- SUPABASE_SERVICE_ROLE_KEY:', !!process.env.SUPABASE_SERVICE_ROLE_KEY)
+
     // Get the authorization header
     const authHeader = request.headers.get('authorization')
+    console.log('Auth header present:', !!authHeader)
+    console.log('Auth header starts with Bearer:', authHeader?.startsWith('Bearer '))
+    
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.error('Missing or invalid authorization header:', authHeader)
       throw new Error('Missing or invalid authorization header')
     }
 
     // Extract the token and validate the user
     const token = authHeader.split(' ')[1]
+    console.log('Token extracted, length:', token?.length)
+    
+    console.log('Validating user with Supabase...')
     const { data: { user }, error: userError } = await supabase.auth.getUser(token)
     
-    if (userError || !user) {
-      throw new Error('Unauthorized')
+    console.log('User validation result:', { user: !!user, error: userError })
+    
+    if (userError) {
+      console.error('User validation error:', userError)
+      throw new Error(`User validation failed: ${userError.message}`)
+    }
+    
+    if (!user) {
+      console.error('No user found in token')
+      throw new Error('Unauthorized - no user found')
     }
 
     // Verify the userId matches the authenticated user
@@ -163,6 +188,7 @@ async function generateSessionWithProgress(
     console.log('User profile:', userProfile)
 
     // Generate the session using AI with progress tracking
+    console.log('Calling generateSessionWithAITracking...')
     const generatedSession = await generateSessionWithAITracking(sessionData, userProfile, (progress, message, stage) => {
       // Map AI progress to overall progress (20-80%)
       const overallProgress = 20 + (progress * 0.6)
@@ -175,6 +201,7 @@ async function generateSessionWithProgress(
     })
     
     console.log('AI session generation completed successfully')
+    console.log('Generated session keys:', Object.keys(generatedSession))
 
     // Stage 4: Saving to database (85%)
     sendProgress({
