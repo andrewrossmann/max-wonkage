@@ -281,9 +281,17 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
               if (data.stage === 'complete') {
                 console.log('Session generation complete!', { stage: data.stage, hasData: !!data.data, data: data.data })
                 if (data.data) {
-                  console.log('Fetching full session data for:', data.data.id)
-                  // Fetch the complete session data from database
-                  fetchFullSessionData(data.data.id, sessionNumber)
+                  try {
+                    // Parse the JSON string data
+                    const sessionData = typeof data.data === 'string' ? JSON.parse(data.data) : data.data
+                    console.log('Parsed session data:', sessionData)
+                    console.log('Fetching full session data for:', sessionData.id)
+                    // Fetch the complete session data from database
+                    fetchFullSessionData(sessionData.id, sessionNumber)
+                  } catch (parseError) {
+                    console.error('Error parsing session data:', parseError)
+                    console.log('Raw data:', data.data)
+                  }
                 } else {
                   console.log('No session data in completion message')
                 }
