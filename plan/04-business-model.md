@@ -19,8 +19,8 @@
 - Video conferencing integration
 
 #### Revenue Model
-- **Platform Commission**: Small percentage of each expert session
-- **Expert Earnings**: Majority of session fee goes to expert
+- **Platform Commission**: 5% of each expert session
+- **Expert Earnings**: 95% of session fee goes to expert
 - **Subscription Tiers**: Optional premium features for power users
 
 ## 🎯 Target Market Segments
@@ -40,9 +40,9 @@
 ## 📊 Revenue Projections
 
 ### Commission Structure
-- **Platform Commission**: 15-20% of session fee
-- **Expert Earnings**: 80-85% of session fee
-- **Payment Processing**: 2.9% + $0.30 per transaction
+- **Platform Commission**: 5% of session fee
+- **Expert Earnings**: 95% of session fee
+- **Stripe Transaction Fee**: 2.9% + $0.30 per transaction (third-party cost)
 
 ### Growth Strategy
 1. **Phase 1**: Build user base with free platform
