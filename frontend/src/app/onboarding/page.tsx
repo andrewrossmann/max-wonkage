@@ -940,7 +940,11 @@ function PersonalBackgroundStep({
                   onChange={(e) => updateData({ [field.id]: e.target.value })}
                   placeholder={field.placeholder}
                   rows={4}
-                  className="w-full px-4 py-2 pr-20 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 resize-none"
+                  className={`w-full px-4 py-2 pr-20 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 resize-none ${
+                    typeof window !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
+                      ? 'text-sm placeholder:text-xs' 
+                      : ''
+                  }`}
                   style={{
                     overflowY: 'scroll',
                     WebkitOverflowScrolling: 'touch',
@@ -952,6 +956,7 @@ function PersonalBackgroundStep({
                     paddingRight: '60px',
                     touchAction: 'pan-y'
                   }}
+                  data-mobile-placeholder={typeof window !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)}
                   onTouchStart={(e) => {
                     // Ensure the textarea can be scrolled on mobile
                     e.currentTarget.focus()
@@ -1243,7 +1248,11 @@ function SkillLevelStep({
               onChange={(e) => updateData({ goals: e.target.value })}
               placeholder="What do you want to achieve? (e.g., Build a web app, Have conversations in Spanish, Write a novel...)"
               rows={4}
-              className="w-full px-4 py-2 pr-20 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 resize-none overflow-y-auto"
+              className={`w-full px-4 py-2 pr-20 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 resize-none overflow-y-auto ${
+                typeof window !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
+                  ? 'text-sm placeholder:text-xs' 
+                  : ''
+              }`}
               style={{
                 WebkitOverflowScrolling: 'touch',
                 scrollBehavior: 'smooth'
@@ -1538,7 +1547,11 @@ function PromptReviewStep({ prompt, onPromptChange, onComplete, onReturnToOrigin
             id="prompt"
             value={prompt}
             onChange={(e) => onPromptChange(e.target.value)}
-            className="w-full h-96 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 resize-none font-mono text-sm overflow-y-auto"
+            className={`w-full h-96 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 resize-none font-mono text-sm overflow-y-auto ${
+              typeof window !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
+                ? 'placeholder:text-xs' 
+                : ''
+            }`}
             placeholder="Your AI prompt will appear here..."
             style={{
               WebkitOverflowScrolling: 'touch',
