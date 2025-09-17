@@ -32,7 +32,7 @@ async function generateSessionWithProgress(
         stage: event.stage,
         progress: event.progress,
         message: event.message?.replace(/[\r\n]/g, ' ').substring(0, 500), // Remove newlines and limit length
-        data: event.data ? JSON.stringify(event.data).substring(0, 1000) : undefined // Limit data size
+        data: event.data ? JSON.stringify(event.data) : undefined // Don't truncate data for completion messages
       }
       
       const jsonString = JSON.stringify(cleanEvent)
