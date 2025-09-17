@@ -152,9 +152,15 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
   }
 
   const handleGenerateSession = async (sessionNumber: number) => {
-    if (!user || !session?.access_token || !curriculum) return
+    console.log('=== GENERATE SESSION CLICKED ===', { sessionNumber, user: !!user, session: !!session, curriculum: !!curriculum })
+    
+    if (!user || !session?.access_token || !curriculum) {
+      console.log('Missing required data:', { user: !!user, session: !!session, curriculum: !!curriculum })
+      return
+    }
 
     try {
+      console.log('Starting session generation...')
       // Add session to generating set and initialize progress
       setGeneratingSessions(prev => new Set(prev).add(sessionNumber))
       setSessionProgress(prev => ({
@@ -166,6 +172,7 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
         }
       }))
 
+      console.log('Making fetch request to API...')
       const response = await fetch('/api/curriculum/session/generate', {
         method: 'POST',
         headers: {
@@ -179,6 +186,8 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
           useSSE: true
         })
       })
+
+      console.log('Fetch response received:', { ok: response.ok, status: response.status, statusText: response.statusText })
 
       if (!response.ok) {
         throw new Error('Failed to start session generation')
