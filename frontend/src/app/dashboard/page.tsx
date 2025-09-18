@@ -273,13 +273,16 @@ function DashboardContent() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <Logo showText={true} size={32} />
-            <div className="flex items-center space-x-4">
-              <span className="text-gray-600">
+            <div className="flex items-center gap-1 md:gap-4">
+              <span className="text-gray-600 text-xs md:text-base hidden md:block">
                 Welcome, {userProfile?.first_name || user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'there'}
+              </span>
+              <span className="text-gray-600 text-xs md:hidden">
+                {userProfile?.first_name || user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'there'}
               </span>
               <motion.button
                 onClick={handleSignOut}
-                className="px-4 py-2 text-yellow-600 border border-yellow-600 rounded-lg hover:bg-yellow-600 hover:text-black transition-all duration-200"
+                className="px-2 py-1 md:px-4 md:py-2 text-yellow-600 border border-yellow-600 rounded-lg hover:bg-yellow-600 hover:text-black transition-all duration-200 text-xs md:text-base"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
