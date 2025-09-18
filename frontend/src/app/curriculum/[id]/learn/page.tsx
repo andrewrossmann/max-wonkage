@@ -901,6 +901,20 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
                       whileHover={{ scale: 1.01 }}
                       transition={{ duration: 0.2 }}
                     >
+                      {/* Mobile Progress - Show at top on mobile only */}
+                      {isGenerating && (
+                        <div className="md:hidden mb-3">
+                          <SessionGenerationProgress
+                            isGenerating={isGenerating}
+                            progress={sessionProgress[sessionNumber]?.progress || 0}
+                            stage={sessionProgress[sessionNumber]?.stage || 'validating'}
+                            message={sessionProgress[sessionNumber]?.message || 'Starting generation...'}
+                            error={sessionProgress[sessionNumber]?.error}
+                            onRetry={() => handleGenerateSession(sessionNumber)}
+                          />
+                        </div>
+                      )}
+                      
                       <div className="flex items-center space-x-2 md:space-x-4">
                         {/* Session Circle */}
                         <div className="flex-shrink-0">
@@ -965,7 +979,7 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
                           ) : (
                             <div className="w-full">
                               {isGenerating ? (
-                                <div className="mb-4">
+                                <div className="mb-4 hidden md:block">
                                   <SessionGenerationProgress
                                     isGenerating={isGenerating}
                                     progress={sessionProgress[sessionNumber]?.progress || 0}
@@ -1036,10 +1050,12 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
                                   })()}
                                 </h4>
                                 <div className="text-sm p-4 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-lg border-l-4 border-purple-400 max-h-40 overflow-y-auto shadow-sm">
-                                  <MarkdownRenderer 
-                                    content={(existingSession.content?.ai_essay || existingSession.ai_essay || '').substring(0, 500) + ((existingSession.content?.ai_essay || existingSession.ai_essay || '').length > 500 ? '...' : '')} 
-                                    className="prose-sm"
-                                  />
+                                  <div className="text-xs md:text-sm">
+                                    <MarkdownRenderer 
+                                      content={(existingSession.content?.ai_essay || existingSession.ai_essay || '').substring(0, 500) + ((existingSession.content?.ai_essay || existingSession.ai_essay || '').length > 500 ? '...' : '')} 
+                                      className="prose-sm"
+                                    />
+                                  </div>
                                 </div>
                                 <div className="text-xs text-gray-500 mt-2 flex items-center">
                                   <Clock className="w-3 h-3 mr-1" />

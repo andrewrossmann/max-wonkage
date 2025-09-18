@@ -130,15 +130,15 @@ export default function SessionGenerationProgress({
   const currentStageInfo = stageInfo[stage]
 
   return (
-    <div className="min-h-[200px] flex items-center justify-center">
+    <div className="min-h-[200px] md:min-h-[200px] min-h-[80px] flex items-center justify-center">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center max-w-sm mx-auto p-4"
+        className="text-center max-w-sm mx-auto p-4 md:p-4 p-2"
       >
         {/* Main Progress Circle */}
-        <div className="relative w-16 h-16 mx-auto mb-4">
-          <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 100 100">
+        <div className="relative w-8 h-8 md:w-16 md:h-16 mx-auto mb-2 md:mb-4">
+          <svg className="w-8 h-8 md:w-16 md:h-16 transform -rotate-90" viewBox="0 0 100 100">
             {/* Background circle */}
             <circle
               cx="50"
@@ -168,8 +168,8 @@ export default function SessionGenerationProgress({
           {/* Center content */}
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center">
-              <div className="text-lg mb-0.5">{currentStageInfo.icon}</div>
-              <div className="text-xs font-semibold text-gray-700">
+              <div className="text-sm md:text-lg mb-0.5">{currentStageInfo.icon}</div>
+              <div className="text-xs md:text-xs font-semibold text-gray-700">
                 {Math.round(displayProgress)}%
               </div>
             </div>
@@ -182,9 +182,9 @@ export default function SessionGenerationProgress({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className={`p-3 rounded-lg border-2 ${currentStageInfo.bgColor} ${currentStageInfo.borderColor} mb-4`}
+          className={`p-2 md:p-3 rounded-lg border-2 ${currentStageInfo.bgColor} ${currentStageInfo.borderColor} mb-2 md:mb-4`}
         >
-          <h3 className={`text-base font-semibold ${currentStageInfo.color} mb-1`}>
+          <h3 className={`text-sm md:text-base font-semibold ${currentStageInfo.color} mb-1`}>
             {currentStageInfo.title}
           </h3>
           <p className="text-xs text-gray-600">
@@ -193,10 +193,10 @@ export default function SessionGenerationProgress({
         </motion.div>
 
         {/* Progress Bar */}
-        <div className="mb-4">
-          <div className="w-full bg-gray-200 rounded-full h-1.5">
+        <div className="mb-2 md:mb-4">
+          <div className="w-full bg-gray-200 rounded-full h-1 md:h-1.5">
             <motion.div
-              className={`h-1.5 rounded-full ${stage === 'error' ? 'bg-red-500' : 'bg-yellow-500'}`}
+              className={`h-1 md:h-1.5 rounded-full ${stage === 'error' ? 'bg-red-500' : 'bg-yellow-500'}`}
               initial={{ width: 0 }}
               animate={{ width: `${displayProgress}%` }}
               transition={{ duration: 0.5, ease: 'easeInOut' }}
@@ -249,7 +249,7 @@ export default function SessionGenerationProgress({
 
         {/* Generation Steps Indicator */}
         {isGenerating && stage !== 'error' && (
-          <div className="mt-4">
+          <div className="mt-4 hidden md:block">
             <div className="flex justify-center space-x-4">
               {[
                 { key: 'validating', label: 'Validation', icon: <Search className="w-4 h-4" /> },

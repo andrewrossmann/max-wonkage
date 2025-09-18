@@ -221,22 +221,22 @@ export default function MarkdownRenderer({ content, className = "" }: MarkdownRe
             );
           },
           h1: ({ children, ...props }) => (
-            <h1 className="text-3xl font-bold text-gray-900 mb-6 mt-8 border-b-2 border-purple-200 pb-2" {...props}>
+            <h1 className="text-xl md:text-3xl font-bold text-gray-900 mb-6 mt-8 border-b-2 border-purple-200 pb-2" {...props}>
               {children}
             </h1>
           ),
           h2: ({ children, ...props }) => (
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4 mt-6" {...props}>
+            <h2 className="text-lg md:text-2xl font-semibold text-gray-900 mb-4 mt-6" {...props}>
               {children}
             </h2>
           ),
           h3: ({ children, ...props }) => (
-            <h3 className="text-xl font-medium text-gray-900 mb-3 mt-5" {...props}>
+            <h3 className="text-base md:text-xl font-medium text-gray-900 mb-3 mt-5" {...props}>
               {children}
             </h3>
           ),
           p: ({ children, ...props }) => (
-            <p className="text-gray-700 leading-relaxed mb-4 text-justify" {...props}>
+            <p className="text-gray-700 leading-relaxed mb-4 text-justify text-xs md:text-base" {...props}>
               {children}
             </p>
           ),
@@ -256,7 +256,7 @@ export default function MarkdownRenderer({ content, className = "" }: MarkdownRe
             </ol>
           ),
           li: ({ children, ...props }) => (
-            <li className="text-gray-700 leading-relaxed pl-2" {...props}>
+            <li className="text-gray-700 leading-relaxed pl-2 text-xs md:text-base" {...props}>
               {children}
             </li>
           ),

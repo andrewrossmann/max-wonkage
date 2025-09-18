@@ -295,9 +295,9 @@ export default function SessionView({ params }: SessionViewProps) {
               {isInProgress && !isCompleted && (
                 <button
                   onClick={markAsCompleted}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center"
+                  className="px-2 py-1 md:px-4 md:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center text-sm md:text-base"
                 >
-                  <CheckCircle className="w-4 h-4 mr-2" />
+                  <CheckCircle className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
                   Mark Complete
                 </button>
               )}
