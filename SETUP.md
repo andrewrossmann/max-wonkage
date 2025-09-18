@@ -18,6 +18,9 @@ OPENAI_API_KEY=your_openai_api_key_here
 
 # Supabase Service Role Key (for server-side operations)
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key_here
+
+# Site URL for email redirects (localhost for development)
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
 ### 2. Database Migration
@@ -46,6 +49,27 @@ Run the database migration to add the new AI curriculum fields:
    - Project URL (for `NEXT_PUBLIC_SUPABASE_URL`)
    - anon/public key (for `NEXT_PUBLIC_SUPABASE_ANON_KEY`)
    - service_role key (for `SUPABASE_SERVICE_ROLE_KEY`)
+
+### 4. Production Environment Variables
+
+For production deployment on Vercel, set these environment variables in your Vercel dashboard:
+
+```bash
+# Supabase Configuration (same as local)
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url_here
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+
+# OpenAI Configuration (same as local)
+OPENAI_API_KEY=your_openai_api_key_here
+
+# Supabase Service Role Key (same as local)
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key_here
+
+# Site URL for email redirects (production URL)
+NEXT_PUBLIC_SITE_URL=https://max-wonkage.vercel.app
+```
+
+**Important**: The `NEXT_PUBLIC_SITE_URL` is crucial for email confirmation links to work correctly in production.
 
 ## Testing the AI Curriculum Generation
 

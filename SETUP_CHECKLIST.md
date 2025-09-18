@@ -35,6 +35,8 @@
 ### 4. Test the System
 - [ ] Run: `cd frontend && node test-ai.js`
 - [ ] Should see "✅ OpenAI API connection successful!"
+- [ ] Run: `cd frontend && node test-auth-config.js`
+- [ ] Should see "✅ Configuration test complete!"
 - [ ] Go to http://localhost:3000/onboarding
 - [ ] Fill out the form and test curriculum generation
 

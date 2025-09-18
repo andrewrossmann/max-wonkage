@@ -13,6 +13,12 @@ fi
 echo "📋 Copying environment variables..."
 cp .env.local frontend/.env.local
 
+# Ensure NEXT_PUBLIC_SITE_URL is set for localhost
+if ! grep -q "NEXT_PUBLIC_SITE_URL" frontend/.env.local; then
+    echo "NEXT_PUBLIC_SITE_URL=http://localhost:3000" >> frontend/.env.local
+    echo "Added NEXT_PUBLIC_SITE_URL for localhost"
+fi
+
 # Install dependencies if needed
 echo "📦 Installing dependencies..."
 cd frontend
