@@ -820,7 +820,7 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
                             <span className="text-sm font-medium text-gray-600">Session {session.session_number || index + 1}</span>
                             <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
                           </div>
-                          <h3 className="font-semibold text-gray-900 text-sm">{session.title}</h3>
+                          <h3 className="font-semibold text-gray-900 text-xs md:text-sm">{session.title}</h3>
                           {session.description && (
                             <p className="text-gray-600 text-xs mt-1">{session.description}</p>
                           )}
@@ -901,11 +901,11 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
                       whileHover={{ scale: 1.01 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-2 md:space-x-4">
                         {/* Session Circle */}
                         <div className="flex-shrink-0">
                           <div 
-                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
+                            className={`w-4 h-4 md:w-6 md:h-6 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
                               isCompleted
                                 ? 'bg-green-500 border-green-500 cursor-pointer hover:bg-green-600'
                                 : isGenerated
@@ -915,8 +915,8 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
                             onClick={() => isGenerated && existingSession && handleSessionCompletionToggle(existingSession.id, sessionNumber)}
                             title={isGenerated ? (isCompleted ? 'Click to mark as incomplete' : 'Click to mark as complete') : 'Generate session first'}
                           >
-                            {isCompleted && <CheckCircle className="w-4 h-4 text-white" />}
-                            {!isCompleted && isGenerated && <Circle className="w-4 h-4 text-white" />}
+                            {isCompleted && <CheckCircle className="w-3 h-3 md:w-4 md:h-4 text-white" />}
+                            {!isCompleted && isGenerated && <Circle className="w-3 h-3 md:w-4 md:h-4 text-white" />}
                           </div>
                         </div>
 
@@ -925,7 +925,7 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
                           <div className="flex items-center space-x-2 mb-1">
                             <span className="text-sm font-medium text-gray-600">Session {sessionNumber}</span>
                             {isCompleted && (
-                              <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                              <span className="px-1 py-0.5 md:px-2 md:py-1 bg-green-100 text-green-800 text-xs rounded-full">
                                 Completed
                               </span>
                             )}
@@ -935,7 +935,7 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
                               </span>
                             )}
                           </div>
-                          <h3 className="font-semibold text-gray-900 text-sm truncate">
+                          <h3 className="font-semibold text-gray-900 text-xs md:text-sm truncate">
                             {sessionTitle}
                           </h3>
                         </div>
@@ -943,16 +943,16 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
                         {/* Action Button */}
                         <div className="flex-shrink-0">
                           {isGenerated ? (
-                            <div className="flex items-center space-x-2">
+                            <div className="flex flex-col space-y-2">
                               <button
                                 onClick={() => toggleSessionExpansion(sessionNumber)}
-                                className="px-3 py-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium"
+                                className="px-3 py-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors text-xs md:text-sm font-medium"
                               >
                                 {isExpanded ? 'Hide' : 'View'} Preview
                               </button>
                               <button
                                 onClick={() => handleStartSession(existingSession!.id, sessionNumber)}
-                                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-1 ${
+                                className={`px-3 py-2 rounded-lg text-xs md:text-sm font-medium transition-colors flex items-center justify-center space-x-1 ${
                                   isCompleted
                                     ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                     : 'bg-yellow-500 text-black hover:bg-yellow-600'
