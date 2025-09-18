@@ -561,46 +561,186 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
               </div>
             </div>
 
-            {/* Progress Bar with Session Circles */}
-            <div className="relative mb-6">
-              <div className="w-full bg-gray-200 rounded-full h-3">
-                <div 
-                  className="bg-blue-500 h-3 rounded-full transition-all duration-500"
-                  style={{ width: `${getProgressPercentage()}%` }}
-                ></div>
-              </div>
-              {/* Session Circles */}
-              <div className="absolute top-1/2 left-0 right-0 flex justify-between transform -translate-y-1/2">
-                {/* Session 0 - Starting point */}
-                <div className="w-6 h-6 rounded-full border-2 bg-green-500 border-green-500 shadow-lg flex items-center justify-center">
-                  <CheckCircle className="w-4 h-4 text-white" />
-                </div>
-                
-                {/* Progress Circles - Show completion based on number completed, not specific sessions */}
-                {Array.from({ length: curriculum.time_availability.totalWeeks * curriculum.time_availability.sessionsPerWeek }, (_, index) => {
-                  const totalSessions = curriculum.time_availability.totalWeeks * curriculum.time_availability.sessionsPerWeek;
-                  const completedCount = sessions.filter(s => s.completed).length;
-                  const isCompleted = index < completedCount;
-                  const isLastCircle = index === totalSessions - 1;
-                  const isFullyCompleted = completedCount === totalSessions;
-                  
-                  return (
-                    <div
-                      key={index}
-                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
-                        isCompleted
-                          ? 'bg-green-500 border-green-500 shadow-lg'
-                          : 'bg-white border-gray-400'
-                      }`}
-                    >
-                      {isCompleted ? (
-                        <CheckCircle className="w-4 h-4 text-white" />
-                      ) : (
-                        <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                      )}
+            {/* Session Progress Circles */}
+            <div className="mb-6">
+              {/* Mobile: Connected circles with custom wrapping */}
+              <div className="md:hidden px-2 py-4">
+                <div className="flex flex-col items-center">
+                  {/* First Row: Up to 9 dots */}
+                  <div className="flex items-center justify-center mb-2">
+                    {/* Session 0 - Starting point */}
+                    <div className="w-4 h-4 rounded-full border-2 bg-green-500 border-green-500 shadow-lg flex items-center justify-center relative z-10">
+                      <CheckCircle className="w-2.5 h-2.5 text-white" />
                     </div>
-                  );
-                })}
+                    
+                    {/* First 8 sessions (9 total including Session 0) */}
+                    {Array.from({ length: Math.min(8, curriculum.time_availability.totalWeeks * curriculum.time_availability.sessionsPerWeek) }, (_, index) => {
+                      const totalSessions = curriculum.time_availability.totalWeeks * curriculum.time_availability.sessionsPerWeek;
+                      const completedCount = sessions.filter(s => s.completed).length;
+                      const isCompleted = index < completedCount;
+                      
+                      return (
+                        <div key={index} className="flex items-center">
+                          {/* Connecting Line */}
+                          <div 
+                            className={`h-0.5 w-3 transition-all duration-300 ${
+                              isCompleted ? 'bg-green-500' : 'bg-blue-500'
+                            }`}
+                          ></div>
+                          
+                          {/* Session Circle */}
+                          <div
+                            className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all duration-300 relative z-10 ${
+                              isCompleted
+                                ? 'bg-green-500 border-green-500 shadow-lg'
+                                : 'bg-white border-gray-400'
+                            }`}
+                          >
+                            {isCompleted ? (
+                              <CheckCircle className="w-2.5 h-2.5 text-white" />
+                            ) : (
+                              <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  
+                  {/* Subsequent Rows: 8 dots each, right-aligned */}
+                  {Array.from({ length: Math.ceil(Math.max(0, curriculum.time_availability.totalWeeks * curriculum.time_availability.sessionsPerWeek - 8) / 8) }, (_, rowIndex) => {
+                    const startIndex = 8 + (rowIndex * 8);
+                    const endIndex = Math.min(startIndex + 8, curriculum.time_availability.totalWeeks * curriculum.time_availability.sessionsPerWeek);
+                    const sessionsInRow = endIndex - startIndex;
+                    
+                    return (
+                      <div key={`row-${rowIndex}`} className="flex items-center justify-end mb-2" style={{ width: `${(sessionsInRow * 28) + 16}px` }}>
+                        {Array.from({ length: sessionsInRow }, (_, index) => {
+                          const actualIndex = startIndex + index;
+                          const totalSessions = curriculum.time_availability.totalWeeks * curriculum.time_availability.sessionsPerWeek;
+                          const completedCount = sessions.filter(s => s.completed).length;
+                          const isCompleted = actualIndex < completedCount;
+                          
+                          return (
+                            <div key={actualIndex} className="flex items-center">
+                              {/* Connecting Line */}
+                              <div 
+                                className={`h-0.5 w-3 transition-all duration-300 ${
+                                  isCompleted ? 'bg-green-500' : 'bg-blue-500'
+                                }`}
+                              ></div>
+                              
+                              {/* Session Circle */}
+                              <div
+                                className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all duration-300 relative z-10 ${
+                                  isCompleted
+                                    ? 'bg-green-500 border-green-500 shadow-lg'
+                                    : 'bg-white border-gray-400'
+                                }`}
+                              >
+                                {isCompleted ? (
+                                  <CheckCircle className="w-2.5 h-2.5 text-white" />
+                                ) : (
+                                  <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Desktop: Connected circles with custom wrapping */}
+              <div className="hidden md:block px-2 py-4">
+                <div className="flex flex-col items-center">
+                  {/* First Row: Up to 20 dots */}
+                  <div className="flex items-center justify-center mb-3">
+                    {/* Session 0 - Starting point */}
+                    <div className="w-6 h-6 rounded-full border-2 bg-green-500 border-green-500 shadow-lg flex items-center justify-center relative z-10">
+                      <CheckCircle className="w-4 h-4 text-white" />
+                    </div>
+                    
+                    {/* First 19 sessions (20 total including Session 0) */}
+                    {Array.from({ length: Math.min(19, curriculum.time_availability.totalWeeks * curriculum.time_availability.sessionsPerWeek) }, (_, index) => {
+                      const totalSessions = curriculum.time_availability.totalWeeks * curriculum.time_availability.sessionsPerWeek;
+                      const completedCount = sessions.filter(s => s.completed).length;
+                      const isCompleted = index < completedCount;
+                      
+                      return (
+                        <div key={index} className="flex items-center">
+                          {/* Connecting Line */}
+                          <div 
+                            className={`h-1 w-4 transition-all duration-300 ${
+                              isCompleted ? 'bg-green-500' : 'bg-blue-500'
+                            }`}
+                          ></div>
+                          
+                          {/* Session Circle */}
+                          <div
+                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 relative z-10 ${
+                              isCompleted
+                                ? 'bg-green-500 border-green-500 shadow-lg'
+                                : 'bg-white border-gray-400'
+                            }`}
+                          >
+                            {isCompleted ? (
+                              <CheckCircle className="w-4 h-4 text-white" />
+                            ) : (
+                              <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  
+                  {/* Subsequent Rows: 19 dots each, right-aligned */}
+                  {Array.from({ length: Math.ceil(Math.max(0, curriculum.time_availability.totalWeeks * curriculum.time_availability.sessionsPerWeek - 19) / 19) }, (_, rowIndex) => {
+                    const startIndex = 19 + (rowIndex * 19);
+                    const endIndex = Math.min(startIndex + 19, curriculum.time_availability.totalWeeks * curriculum.time_availability.sessionsPerWeek);
+                    const sessionsInRow = endIndex - startIndex;
+                    
+                    return (
+                      <div key={`row-${rowIndex}`} className="flex items-center justify-end mb-3" style={{ width: `${(sessionsInRow * 40) + 24}px` }}>
+                        {Array.from({ length: sessionsInRow }, (_, index) => {
+                          const actualIndex = startIndex + index;
+                          const totalSessions = curriculum.time_availability.totalWeeks * curriculum.time_availability.sessionsPerWeek;
+                          const completedCount = sessions.filter(s => s.completed).length;
+                          const isCompleted = actualIndex < completedCount;
+                          
+                          return (
+                            <div key={actualIndex} className="flex items-center">
+                              {/* Connecting Line */}
+                              <div 
+                                className={`h-1 w-4 transition-all duration-300 ${
+                                  isCompleted ? 'bg-green-500' : 'bg-blue-500'
+                                }`}
+                              ></div>
+                              
+                              {/* Session Circle */}
+                              <div
+                                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 relative z-10 ${
+                                  isCompleted
+                                    ? 'bg-green-500 border-green-500 shadow-lg'
+                                    : 'bg-white border-gray-400'
+                                }`}
+                              >
+                                {isCompleted ? (
+                                  <CheckCircle className="w-4 h-4 text-white" />
+                                ) : (
+                                  <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
