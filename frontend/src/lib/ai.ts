@@ -153,12 +153,12 @@ export class AICurriculumGenerator {
     return prompts;
   }
 
-  // Replace image prompts with actual generated images
+  // Replace image prompts with actual generated images (parallel processing)
   async processEssayImages(essayContent: string): Promise<string> {
     const imagePrompts = this.extractImagePrompts(essayContent);
     let processedContent = essayContent;
     
-    console.log(`🖼️ Processing ${imagePrompts.length} image prompts...`);
+    console.log(`🖼️ Processing ${imagePrompts.length} image prompts in parallel...`);
     console.log('📝 Image prompts found:', imagePrompts);
     
     if (imagePrompts.length === 0) {
@@ -166,42 +166,79 @@ export class AICurriculumGenerator {
       return processedContent;
     }
     
-    let successCount = 0;
-    let failureCount = 0;
-    
-    for (let i = 0; i < imagePrompts.length; i++) {
-      const prompt = imagePrompts[i];
-      console.log(`🎨 Processing image prompt ${i + 1}/${imagePrompts.length}: "${prompt}"`);
+    // Process all images in parallel with individual timeouts
+    const imagePromises = imagePrompts.map(async (prompt, index) => {
+      console.log(`🎨 Starting image generation ${index + 1}/${imagePrompts.length}: "${prompt}"`);
       
       try {
-        const imageUrl = await this.generateImageForEssay(prompt);
+        // Individual timeout for each image (60 seconds)
+        const imageTimeoutPromise = new Promise<null>((_, reject) => {
+          setTimeout(() => reject(new Error('Individual image generation timeout')), 60000)
+        })
         
-        if (imageUrl) {
+        const imagePromise = this.generateImageForEssay(prompt);
+        const imageUrl = await Promise.race([imagePromise, imageTimeoutPromise]);
+        
+        return {
+          index,
+          prompt,
+          imageUrl,
+          success: !!imageUrl
+        };
+      } catch (error) {
+        console.error(`💥 Error processing image prompt ${index + 1}:`, error);
+        return {
+          index,
+          prompt,
+          imageUrl: null,
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        };
+      }
+    });
+    
+    // Wait for all images to complete (with overall timeout)
+    const overallTimeoutPromise = new Promise<never>((_, reject) => {
+      const timeoutMs = Math.min(180000, 60000 + (imagePrompts.length * 30000)); // 60s base + 30s per image, max 3 minutes
+      setTimeout(() => reject(new Error('Overall image processing timeout')), timeoutMs)
+    });
+    
+    try {
+      const results = await Promise.race([
+        Promise.all(imagePromises),
+        overallTimeoutPromise
+      ]);
+      
+      let successCount = 0;
+      let failureCount = 0;
+      
+      // Process results and replace prompts
+      for (const result of results) {
+        if (result.success && result.imageUrl) {
           // Replace the prompt with actual markdown image
-          const promptPattern = `[IMAGE_PROMPT: "${prompt}"]`;
-          const imageMarkdown = `![${prompt}](${imageUrl})`;
+          const promptPattern = `[IMAGE_PROMPT: "${result.prompt}"]`;
+          const imageMarkdown = `![${result.prompt}](${result.imageUrl})`;
           processedContent = processedContent.replace(promptPattern, imageMarkdown);
-          console.log(`✅ Successfully replaced image prompt ${i + 1} with generated image: ${imageUrl}`);
+          console.log(`✅ Successfully replaced image prompt ${result.index + 1} with generated image: ${result.imageUrl}`);
           successCount++;
         } else {
           // Remove the prompt if image generation failed
-          const promptPattern = `[IMAGE_PROMPT: "${prompt}"]`;
+          const promptPattern = `[IMAGE_PROMPT: "${result.prompt}"]`;
           processedContent = processedContent.replace(promptPattern, '');
-          console.log(`❌ Failed to generate image for prompt ${i + 1}, removed prompt`);
+          console.log(`❌ Failed to generate image for prompt ${result.index + 1}, removed prompt`);
           failureCount++;
         }
-      } catch (error) {
-        console.error(`💥 Error processing image prompt ${i + 1}:`, error);
-        // Remove the prompt if there was an error
-        const promptPattern = `[IMAGE_PROMPT: "${prompt}"]`;
-        processedContent = processedContent.replace(promptPattern, '');
-        console.log(`❌ Error processing image prompt ${i + 1}, removed prompt`);
-        failureCount++;
       }
+      
+      console.log(`🖼️ Image processing completed. Success: ${successCount}, Failures: ${failureCount}, Total: ${imagePrompts.length}`);
+      return processedContent;
+      
+    } catch (error) {
+      console.warn('⚠️ Image processing timed out, removing all image prompts:', error);
+      // Remove all image prompts if overall processing times out
+      processedContent = essayContent.replace(/\[IMAGE_PROMPT:\s*"[^"]+"\]/g, '');
+      return processedContent;
     }
-    
-    console.log(`🖼️ Image processing completed. Success: ${successCount}, Failures: ${failureCount}, Total: ${imagePrompts.length}`);
-    return processedContent;
   }
 
   async generateSmartPrompt(request: CurriculumGenerationRequest): Promise<string> {
@@ -1102,8 +1139,9 @@ REQUIREMENTS:
       } else {
         try {
           console.log('Starting image processing...')
+          // Increased timeout to 2 minutes for parallel processing
           const imageTimeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('Image processing timeout')), 60000) // Increased to 60 seconds
+            setTimeout(() => reject(new Error('Image processing timeout')), 120000) // 2 minutes for parallel processing
           })
           
           const imageProcessingPromise = this.processEssayImages(essayContent.trim())
@@ -1165,14 +1203,27 @@ REQUIREMENTS:
     } catch (error) {
       console.error('Error generating session:', error)
       
-      // Handle specific timeout errors
+      // Handle specific timeout errors with more detailed messages
       if (error instanceof Error && error.message.includes('timeout')) {
-        throw new Error('Session generation timed out. Please try again with a shorter session or try again later.')
+        if (error.message.includes('structure')) {
+          throw new Error('Session structure generation timed out. The AI is taking longer than expected. Please try again.')
+        } else if (error.message.includes('essay')) {
+          throw new Error('Essay generation timed out. The content is taking longer than expected. Please try again.')
+        } else if (error.message.includes('image')) {
+          throw new Error('Image generation timed out. Session will be created without custom images. Please try again if needed.')
+        } else {
+          throw new Error('Session generation timed out. Please try again with a shorter session or try again later.')
+        }
       }
       
       // Handle OpenAI API errors
-      if (error instanceof Error && error.message.includes('API')) {
-        throw new Error('AI service temporarily unavailable. Please try again in a few minutes.')
+      if (error instanceof Error && (error.message.includes('API') || error.message.includes('rate limit'))) {
+        throw new Error('AI service temporarily unavailable due to high demand. Please try again in a few minutes.')
+      }
+      
+      // Handle quota exceeded errors
+      if (error instanceof Error && error.message.includes('quota')) {
+        throw new Error('AI service quota exceeded. Please try again later or contact support.')
       }
       
       // Handle other specific errors
