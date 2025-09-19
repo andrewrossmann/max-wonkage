@@ -153,17 +153,58 @@ export class AICurriculumGenerator {
     return prompts;
   }
 
+  // Store DALL-E image permanently
+  async storeImagePermanently(dalleUrl: string, sessionId: string, prompt: string): Promise<any> {
+    try {
+      console.log('💾 Storing DALL-E image permanently:', { dalleUrl, sessionId, prompt });
+      
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const response = await fetch(`${baseUrl}/api/images/store`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dalleUrl,
+          sessionId,
+          prompt
+        })
+      });
+      
+      console.log('📡 Image storage API response status:', response.status);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('❌ Image storage API error:', errorData);
+        throw new Error(`Failed to store image: ${errorData.error || response.statusText}`);
+      }
+      
+      const result = await response.json();
+      console.log('✅ Image stored successfully:', result.image);
+      return result.image;
+      
+    } catch (error) {
+      console.error('💥 Failed to store image permanently:', error);
+      return null;
+    }
+  }
+
   // Replace image prompts with actual generated images (parallel processing)
-  async processEssayImages(essayContent: string): Promise<string> {
+  async processEssayImages(essayContent: string, sessionId?: string): Promise<string> {
     const imagePrompts = this.extractImagePrompts(essayContent);
     let processedContent = essayContent;
     
     console.log(`🖼️ Processing ${imagePrompts.length} image prompts in parallel...`);
     console.log('📝 Image prompts found:', imagePrompts);
+    console.log('🆔 Session ID for image storage:', sessionId);
     
     if (imagePrompts.length === 0) {
       console.log('ℹ️ No image prompts found in essay content');
       return processedContent;
+    }
+    
+    if (!sessionId) {
+      console.log('⚠️ No sessionId provided - images will not be stored permanently');
     }
     
     // Process all images in parallel with individual timeouts
@@ -177,14 +218,37 @@ export class AICurriculumGenerator {
         })
         
         const imagePromise = this.generateImageForEssay(prompt);
-        const imageUrl = await Promise.race([imagePromise, imageTimeoutPromise]);
+        const dalleUrl = await Promise.race([imagePromise, imageTimeoutPromise]);
         
-        return {
-          index,
-          prompt,
-          imageUrl,
-          success: !!imageUrl
-        };
+        if (dalleUrl && sessionId) {
+          // Store the image permanently
+          console.log(`💾 Storing DALL-E image permanently for session ${sessionId}`);
+          console.log(`🔗 DALL-E URL: ${dalleUrl.substring(0, 50)}...`);
+          const storedImage = await this.storeImagePermanently(dalleUrl, sessionId, prompt);
+          
+          if (storedImage) {
+            console.log(`✅ Image stored successfully, using stored URL: ${storedImage.stored_url?.substring(0, 50)}...`);
+          } else {
+            console.log(`❌ Image storage failed, using DALL-E URL: ${dalleUrl.substring(0, 50)}...`);
+          }
+          
+          return {
+            index,
+            prompt,
+            imageUrl: storedImage?.stored_url || dalleUrl, // Use stored URL if available, fallback to DALL-E URL
+            success: !!dalleUrl,
+            stored: !!storedImage
+          };
+        } else {
+          console.log(`⚠️ Skipping image storage - sessionId: ${sessionId}, dalleUrl: ${!!dalleUrl}`);
+          return {
+            index,
+            prompt,
+            imageUrl: dalleUrl,
+            success: !!dalleUrl,
+            stored: false
+          };
+        }
       } catch (error) {
         console.error(`💥 Error processing image prompt ${index + 1}:`, error);
         return {
@@ -192,6 +256,7 @@ export class AICurriculumGenerator {
           prompt,
           imageUrl: null,
           success: false,
+          stored: false,
           error: error instanceof Error ? error.message : 'Unknown error'
         };
       }
@@ -211,6 +276,7 @@ export class AICurriculumGenerator {
       
       let successCount = 0;
       let failureCount = 0;
+      let storedCount = 0;
       
       // Process results and replace prompts
       for (const result of results) {
@@ -221,6 +287,7 @@ export class AICurriculumGenerator {
           processedContent = processedContent.replace(promptPattern, imageMarkdown);
           console.log(`✅ Successfully replaced image prompt ${result.index + 1} with generated image: ${result.imageUrl}`);
           successCount++;
+          if (result.stored) storedCount++;
         } else {
           // Remove the prompt if image generation failed
           const promptPattern = `[IMAGE_PROMPT: "${result.prompt}"]`;
@@ -230,7 +297,7 @@ export class AICurriculumGenerator {
         }
       }
       
-      console.log(`🖼️ Image processing completed. Success: ${successCount}, Failures: ${failureCount}, Total: ${imagePrompts.length}`);
+      console.log(`🖼️ Image processing completed. Success: ${successCount}, Stored: ${storedCount}, Failures: ${failureCount}, Total: ${imagePrompts.length}`);
       return processedContent;
       
     } catch (error) {
@@ -989,7 +1056,7 @@ REQUIREMENTS:
     }
   }
 
-  async generateSession(sessionData: Partial<SessionData>, userProfile: CurriculumGenerationRequest['userProfile'], onProgress?: (progress: number, message: string, stage?: string) => void): Promise<SessionData> {
+  async generateSession(sessionData: Partial<SessionData>, userProfile: CurriculumGenerationRequest['userProfile'], sessionId?: string, onProgress?: (progress: number, message: string, stage?: string) => void): Promise<SessionData> {
     const startTime = Date.now()
     const estimatedTotalTime = 45000 // 45 seconds estimated total time
     
@@ -1144,8 +1211,10 @@ REQUIREMENTS:
             setTimeout(() => reject(new Error('Image processing timeout')), 120000) // 2 minutes for parallel processing
           })
           
-          const imageProcessingPromise = this.processEssayImages(essayContent.trim())
+          console.log(`🖼️ Starting image processing with sessionId: ${sessionId}`)
+          const imageProcessingPromise = this.processEssayImages(essayContent.trim(), sessionId)
           processedEssay = await Promise.race([imageProcessingPromise, imageTimeoutPromise]) as string
+          console.log(`🖼️ Image processing completed for sessionId: ${sessionId}`)
           console.log('Image processing completed successfully')
         } catch (imageError) {
           console.warn('Image processing timed out or failed, removing image prompts:', imageError)

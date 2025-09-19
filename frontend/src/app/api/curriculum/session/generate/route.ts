@@ -187,9 +187,40 @@ async function generateSessionWithProgress(
     console.log('Session data:', sessionData)
     console.log('User profile:', userProfile)
 
+    // Stage 3: Create session record first (20%)
+    sendProgress({
+      stage: 'saving',
+      progress: 20,
+      message: 'Creating session record...'
+    })
+
+    const { data: newSession, error: insertError } = await userSupabase
+      .from('learning_sessions')
+      .insert({
+        curriculum_id: curriculumId,
+        session_number: sessionNumber,
+        title: `Session ${sessionNumber}`, // Temporary title
+        description: 'Generating content...', // Temporary description
+        content: {},
+        duration_minutes: curriculum.time_availability.sessionLength,
+        generation_metadata: {
+          generated_at: new Date().toISOString(),
+          ai_model: 'gpt-4',
+          status: 'generating'
+        }
+      })
+      .select()
+      .single()
+
+    if (insertError) {
+      throw new Error(`Failed to create session record: ${insertError.message}`)
+    }
+
+    console.log('Session record created with ID:', newSession.id)
+
     // Generate the session using AI with progress tracking
     console.log('Calling generateSessionWithAITracking...')
-    const generatedSession = await generateSessionWithAITracking(sessionData, userProfile, (progress, message, stage) => {
+    const generatedSession = await generateSessionWithAITracking(sessionData, userProfile, newSession.id, (progress, message, stage) => {
       // Map AI progress to overall progress (20-80%)
       const overallProgress = 20 + (progress * 0.6)
       console.log(`AI Progress: ${progress}% - ${message} (${stage})`)
@@ -203,22 +234,19 @@ async function generateSessionWithProgress(
     console.log('AI session generation completed successfully')
     console.log('Generated session keys:', Object.keys(generatedSession))
 
-    // Stage 4: Saving to database (85%)
+    // Stage 4: Update session with generated content (85%)
     sendProgress({
       stage: 'saving',
       progress: 85,
-      message: 'Saving session to database...'
+      message: 'Saving generated content to database...'
     })
 
-    const { data: newSession, error: insertError } = await userSupabase
+    const { error: updateError } = await userSupabase
       .from('learning_sessions')
-      .insert({
-        curriculum_id: curriculumId,
-        session_number: sessionNumber,
+      .update({
         title: generatedSession.title,
         description: generatedSession.description,
         content: generatedSession,
-        duration_minutes: curriculum.time_availability.sessionLength,
         content_density: generatedSession.content_density,
         session_type: generatedSession.session_type,
         ai_essay: generatedSession.ai_essay,
@@ -231,14 +259,14 @@ async function generateSessionWithProgress(
         discussion_prompts: generatedSession.discussion_prompts,
         generation_metadata: {
           generated_at: new Date().toISOString(),
-          ai_model: 'gpt-4'
+          ai_model: 'gpt-4',
+          status: 'completed'
         }
       })
-      .select()
-      .single()
+      .eq('id', newSession.id)
 
-    if (insertError) {
-      throw new Error(`Failed to save session: ${insertError.message}`)
+    if (updateError) {
+      throw new Error(`Failed to update session: ${updateError.message}`)
     }
 
     // Stage 5: Complete (100%) - Send completion without large data
@@ -281,9 +309,10 @@ async function generateSessionWithProgress(
 async function generateSessionWithAITracking(
   sessionData: any,
   userProfile: CurriculumGenerationRequest['userProfile'],
+  sessionId: string,
   onProgress: (progress: number, message: string, stage?: string) => void
 ) {
-  return await aiCurriculumGenerator.generateSession(sessionData, userProfile, onProgress)
+  return await aiCurriculumGenerator.generateSession(sessionData, userProfile, sessionId, onProgress)
 }
 
 export async function POST(request: NextRequest) {
@@ -432,10 +461,40 @@ export async function POST(request: NextRequest) {
     console.log('User profile:', userProfile)
     console.log('Session data:', sessionData)
     
+    // Create session record first
+    console.log('Creating session record...')
+    const { data: newSession, error: insertError } = await userSupabase
+      .from('learning_sessions')
+      .insert({
+        curriculum_id: curriculumId,
+        session_number: sessionNumber,
+        title: `Session ${sessionNumber}`, // Temporary title
+        description: 'Generating content...', // Temporary description
+        content: {},
+        duration_minutes: curriculum.time_availability.sessionLength,
+        generation_metadata: {
+          generated_at: new Date().toISOString(),
+          ai_model: 'gpt-4',
+          status: 'generating'
+        }
+      })
+      .select()
+      .single()
+
+    if (insertError) {
+      console.error('Failed to create session record:', insertError)
+      return NextResponse.json(
+        { error: `Failed to create session record: ${insertError.message}` },
+        { status: 500 }
+      )
+    }
+
+    console.log('Session record created with ID:', newSession.id)
+    
     let generatedSession
     try {
       console.log('Starting AI session generation...')
-      generatedSession = await aiCurriculumGenerator.generateSession(sessionData, userProfile)
+      generatedSession = await aiCurriculumGenerator.generateSession(sessionData, userProfile, newSession.id)
       console.log('Session generation completed successfully')
       console.log('Generated session keys:', Object.keys(generatedSession))
     } catch (aiError) {
@@ -450,19 +509,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Save the generated session to database
-    console.log('Saving session to database...')
+    // Update the session with generated content
+    console.log('Updating session with generated content...')
     console.log('Generated session data:', generatedSession)
     
-    const { data: newSession, error: insertError } = await userSupabase
+    const { error: updateError } = await userSupabase
       .from('learning_sessions')
-      .insert({
-        curriculum_id: curriculumId,
-        session_number: sessionNumber,
+      .update({
         title: generatedSession.title,
         description: generatedSession.description,
         content: generatedSession,
-        duration_minutes: curriculum.time_availability.sessionLength,
         content_density: generatedSession.content_density,
         session_type: generatedSession.session_type,
         ai_essay: generatedSession.ai_essay,
@@ -475,16 +531,16 @@ export async function POST(request: NextRequest) {
         discussion_prompts: generatedSession.discussion_prompts,
         generation_metadata: {
           generated_at: new Date().toISOString(),
-          ai_model: 'gpt-4'
+          ai_model: 'gpt-4',
+          status: 'completed'
         }
       })
-      .select()
-      .single()
+      .eq('id', newSession.id)
 
-    if (insertError) {
-      console.error('Error inserting session:', insertError)
+    if (updateError) {
+      console.error('Failed to update session:', updateError)
       return NextResponse.json(
-        { error: `Failed to save session: ${insertError.message}` },
+        { error: `Failed to update session: ${updateError.message}` },
         { status: 500 }
       )
     }

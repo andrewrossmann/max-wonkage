@@ -45,15 +45,22 @@ export default function MarkdownRenderer({ content, className = "" }: MarkdownRe
     
     console.log('Validating image URL:', url);
     
-    // Check if it's a DALL-E image URL
+    // Check if it's a stored image URL (Supabase Storage)
+    if (url.includes('supabase') || url.includes('storage.googleapis.com') || url.includes('session-images')) {
+      console.log('Stored image detected, using directly');
+      return url;
+    }
+    
+    // Check if it's a DALL-E image URL (temporary)
     if (url.includes('dalle') || url.includes('openai') || url.startsWith('https://oaidalleapiprodscus.blob.core.windows.net')) {
-      // DALL-E images often expire or have auth issues, so we'll use fallback for now
+      // DALL-E images often expire or have auth issues, so we'll use fallback
       console.log('DALL-E image detected, using fallback due to potential auth issues');
       return getNextFallbackImage('dalle-auth-issue');
     }
     
-    // For any other URLs, use fallback
-    return getNextFallbackImage('unknown-source');
+    // For any other URLs, try to use them directly
+    console.log('External image URL detected, using directly');
+    return url;
   }
 
   useEffect(() => {
