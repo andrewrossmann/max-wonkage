@@ -69,3 +69,38 @@ body {
     min-width: 280px;
   }
 }
+
+/* Responsive image styles for DALL-E and other images */
+@media (max-width: 640px) {
+  /* Mobile phones */
+  .markdown-content img {
+    max-width: 100% !important;
+    max-height: 200px !important;
+    width: auto !important;
+    height: auto !important;
+    margin: 0.5rem auto !important;
+    display: block !important;
+    float: none !important;
+    clear: both !important;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 768px) {
+  /* Small tablets */
+  .markdown-content img {
+    max-width: 100% !important;
+    max-height: 250px !important;
+    width: auto !important;
+    height: auto !important;
+  }
+}
+
+@media (min-width: 769px) {
+  /* Desktop and large tablets */
+  .markdown-content img {
+    max-width: 100% !important;
+    max-height: 300px !important;
+    width: auto !important;
+    height: auto !important;
+  }
+}

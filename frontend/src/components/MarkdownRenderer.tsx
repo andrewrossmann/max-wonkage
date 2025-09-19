@@ -141,7 +141,7 @@ export default function MarkdownRenderer({ content, className = "" }: MarkdownRe
   }, [content])
 
   return (
-    <div ref={mermaidRef} className={`prose prose-sm sm:prose-base lg:prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-strong:text-gray-900 prose-code:text-purple-600 prose-code:bg-purple-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs sm:prose-code:text-sm prose-pre:bg-gray-100 prose-pre:border prose-pre:border-gray-200 prose-pre:text-xs sm:prose-pre:text-sm prose-pre:overflow-x-auto prose-pre:my-4 prose-blockquote:border-l-4 prose-blockquote:border-yellow-400 prose-blockquote:bg-yellow-50 prose-blockquote:pl-4 prose-blockquote:py-2 prose-blockquote:my-4 prose-table:border-collapse prose-table:border prose-table:border-gray-300 prose-th:border prose-th:border-gray-300 prose-th:bg-gray-50 prose-th:px-4 prose-th:py-2 prose-td:border prose-td:border-gray-300 prose-td:px-4 prose-td:py-2 prose-img:rounded-lg prose-img:shadow-md prose-img:my-6 prose-img:mx-auto prose-img:max-w-full prose-img:h-auto ${className}`} style={{ overflow: 'hidden' }}>
+    <div ref={mermaidRef} className={`markdown-content prose prose-sm sm:prose-base lg:prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-strong:text-gray-900 prose-code:text-purple-600 prose-code:bg-purple-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs sm:prose-code:text-sm prose-pre:bg-gray-100 prose-pre:border prose-pre:border-gray-200 prose-pre:text-xs sm:prose-pre:text-sm prose-pre:overflow-x-auto prose-pre:my-4 prose-blockquote:border-l-4 prose-blockquote:border-yellow-400 prose-blockquote:bg-yellow-50 prose-blockquote:pl-4 prose-blockquote:py-2 prose-blockquote:my-4 prose-table:border-collapse prose-table:border prose-table:border-gray-300 prose-th:border prose-th:border-gray-300 prose-th:bg-gray-50 prose-th:px-4 prose-th:py-2 prose-td:border prose-td:border-gray-300 prose-td:px-4 prose-td:py-2 prose-img:rounded-lg prose-img:shadow-md prose-img:my-6 prose-img:mx-auto prose-img:max-w-full prose-img:h-auto ${className}`} style={{ overflow: 'hidden' }}>
       <style jsx>{`
         .prose img {
           margin: 1.5rem 1rem;
@@ -318,9 +318,9 @@ export default function MarkdownRenderer({ content, className = "" }: MarkdownRe
                 <img 
                   src={validatedSrc} 
                   alt="" 
-                  className="rounded-lg shadow-lg max-w-sm h-auto"
+                  className="rounded-lg shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg h-auto"
                   style={{ 
-                    maxHeight: '350px', 
+                    maxHeight: '250px', 
                     objectFit: 'contain', 
                     clear: isEvenImage ? 'left' : 'right',
                     shapeOutside: 'margin-box'
