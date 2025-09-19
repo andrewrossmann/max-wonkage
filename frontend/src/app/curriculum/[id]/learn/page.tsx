@@ -587,7 +587,7 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
                           {/* Connecting Line */}
                           <div 
                             className={`h-0.5 w-3 transition-all duration-300 ${
-                              isCompleted ? 'bg-green-500' : 'bg-blue-500'
+                              isCompleted ? 'bg-green-500' : 'border-t-2 border-dashed border-gray-400'
                             }`}
                           ></div>
                           
@@ -629,7 +629,7 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
                               {/* Connecting Line */}
                               <div 
                                 className={`h-0.5 w-3 transition-all duration-300 ${
-                                  isCompleted ? 'bg-green-500' : 'bg-blue-500'
+                                  isCompleted ? 'bg-green-500' : 'border-t-2 border-dashed border-gray-400'
                                 }`}
                               ></div>
                               
@@ -677,7 +677,7 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
                           {/* Connecting Line */}
                           <div 
                             className={`h-1 w-4 transition-all duration-300 ${
-                              isCompleted ? 'bg-green-500' : 'bg-blue-500'
+                              isCompleted ? 'bg-green-500' : 'border-t-2 border-dashed border-gray-400'
                             }`}
                           ></div>
                           
@@ -719,7 +719,7 @@ export default function LearningPage({ params }: { params: Promise<{ id: string 
                               {/* Connecting Line */}
                               <div 
                                 className={`h-1 w-4 transition-all duration-300 ${
-                                  isCompleted ? 'bg-green-500' : 'bg-blue-500'
+                                  isCompleted ? 'bg-green-500' : 'border-t-2 border-dashed border-gray-400'
                                 }`}
                               ></div>
                               
