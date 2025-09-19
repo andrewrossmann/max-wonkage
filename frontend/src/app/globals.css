@@ -24,3 +24,48 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Global Mermaid diagram responsive styles */
+.mermaid-diagram {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  margin: 1rem 0;
+  display: flex;
+  justify-content: center;
+}
+
+.mermaid-diagram svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Mobile responsive styles for Mermaid diagrams */
+@media (max-width: 768px) {
+  .mermaid-diagram {
+    margin: 0.5rem -1rem;
+    padding: 0 1rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .mermaid-diagram svg {
+    min-width: 300px;
+    max-width: none;
+    width: auto;
+  }
+}
+
+/* Additional mobile optimizations for very small screens */
+@media (max-width: 480px) {
+  .mermaid-diagram {
+    margin: 0.5rem -0.5rem;
+    padding: 0 0.5rem;
+  }
+  
+  .mermaid-diagram svg {
+    min-width: 280px;
+  }
+}

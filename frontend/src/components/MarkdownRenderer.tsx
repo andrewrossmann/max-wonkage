@@ -68,11 +68,47 @@ export default function MarkdownRenderer({ content, className = "" }: MarkdownRe
     imageCountRef.current = 0;
     fallbackCountRef.current = 0;
     
-    // Initialize Mermaid
+    // Initialize Mermaid with responsive configuration
     mermaid.initialize({
       startOnLoad: false,
       theme: 'default',
       securityLevel: 'loose',
+      maxTextSize: 50000,
+      maxEdges: 500,
+      flowchart: {
+        useMaxWidth: true,
+        htmlLabels: true,
+      },
+      sequence: {
+        useMaxWidth: true,
+      },
+      gantt: {
+        useMaxWidth: true,
+      },
+      journey: {
+        useMaxWidth: true,
+      },
+      gitgraph: {
+        useMaxWidth: true,
+      },
+      pie: {
+        useMaxWidth: true,
+      },
+      quadrantChart: {
+        useMaxWidth: true,
+      },
+      xyChart: {
+        useMaxWidth: true,
+      },
+      timeline: {
+        useMaxWidth: true,
+      },
+      mindmap: {
+        useMaxWidth: true,
+      },
+      timeline: {
+        useMaxWidth: true,
+      },
     })
 
     // Render Mermaid diagrams
@@ -88,7 +124,7 @@ export default function MarkdownRenderer({ content, className = "" }: MarkdownRe
               const { svg } = await mermaid.render(`mermaid-${i}`, graphDefinition)
               const wrapper = document.createElement('div')
               wrapper.innerHTML = svg
-              wrapper.className = 'mermaid-diagram my-4'
+              wrapper.className = 'mermaid-diagram my-4 w-full overflow-x-auto'
               element.parentElement?.replaceWith(wrapper)
             } catch (error) {
               console.error('Mermaid rendering error:', error)
@@ -105,7 +141,7 @@ export default function MarkdownRenderer({ content, className = "" }: MarkdownRe
   }, [content])
 
   return (
-    <div ref={mermaidRef} className={`prose prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-strong:text-gray-900 prose-code:text-purple-600 prose-code:bg-purple-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-gray-100 prose-pre:border prose-pre:border-gray-200 prose-blockquote:border-l-4 prose-blockquote:border-yellow-400 prose-blockquote:bg-yellow-50 prose-blockquote:pl-4 prose-blockquote:py-2 prose-blockquote:my-4 prose-table:border-collapse prose-table:border prose-table:border-gray-300 prose-th:border prose-th:border-gray-300 prose-th:bg-gray-50 prose-th:px-4 prose-th:py-2 prose-td:border prose-td:border-gray-300 prose-td:px-4 prose-td:py-2 prose-img:rounded-lg prose-img:shadow-md prose-img:my-6 prose-img:mx-auto prose-img:max-w-full prose-img:h-auto ${className}`} style={{ overflow: 'hidden' }}>
+    <div ref={mermaidRef} className={`prose prose-sm sm:prose-base lg:prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-strong:text-gray-900 prose-code:text-purple-600 prose-code:bg-purple-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs sm:prose-code:text-sm prose-pre:bg-gray-100 prose-pre:border prose-pre:border-gray-200 prose-pre:text-xs sm:prose-pre:text-sm prose-pre:overflow-x-auto prose-pre:my-4 prose-blockquote:border-l-4 prose-blockquote:border-yellow-400 prose-blockquote:bg-yellow-50 prose-blockquote:pl-4 prose-blockquote:py-2 prose-blockquote:my-4 prose-table:border-collapse prose-table:border prose-table:border-gray-300 prose-th:border prose-th:border-gray-300 prose-th:bg-gray-50 prose-th:px-4 prose-th:py-2 prose-td:border prose-td:border-gray-300 prose-td:px-4 prose-td:py-2 prose-img:rounded-lg prose-img:shadow-md prose-img:my-6 prose-img:mx-auto prose-img:max-w-full prose-img:h-auto ${className}`} style={{ overflow: 'hidden' }}>
       <style jsx>{`
         .prose img {
           margin: 1.5rem 1rem;
@@ -142,6 +178,102 @@ export default function MarkdownRenderer({ content, className = "" }: MarkdownRe
         }
         .prose img + h1, .prose img + h2, .prose img + h3 {
           margin-top: 2rem;
+        }
+        
+        /* Mermaid diagram responsive styles */
+        .mermaid-diagram {
+          width: 100%;
+          max-width: 100%;
+          overflow-x: auto;
+          overflow-y: visible;
+          margin: 1rem 0;
+          display: flex;
+          justify-content: center;
+        }
+        
+        .mermaid-diagram svg {
+          max-width: 100%;
+          height: auto;
+          display: block;
+        }
+        
+        /* Ensure Mermaid diagrams don't overflow on mobile */
+        @media (max-width: 768px) {
+          .mermaid-diagram {
+            margin: 0.5rem -1rem;
+            padding: 0 1rem;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+          }
+          
+          .mermaid-diagram svg {
+            min-width: 300px;
+            max-width: none;
+            width: auto;
+          }
+        }
+        
+        /* Additional mobile optimizations for very small screens */
+        @media (max-width: 480px) {
+          .mermaid-diagram {
+            margin: 0.5rem -0.5rem;
+            padding: 0 0.5rem;
+          }
+          
+          .mermaid-diagram svg {
+            min-width: 280px;
+          }
+        }
+        
+        /* Code block responsive styles */
+        .prose pre {
+          font-size: 0.75rem;
+          line-height: 1.4;
+          padding: 0.75rem;
+          margin: 1rem 0;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+          border-radius: 0.375rem;
+          background-color: #f8f9fa;
+          border: 1px solid #e9ecef;
+        }
+        
+        .prose code {
+          font-size: 0.75rem;
+          padding: 0.125rem 0.25rem;
+          border-radius: 0.25rem;
+          background-color: #f1f3f4;
+          color: #7c3aed;
+        }
+        
+        /* Mobile code block optimizations */
+        @media (max-width: 768px) {
+          .prose pre {
+            font-size: 0.6875rem;
+            padding: 0.5rem;
+            margin: 0.75rem -1rem;
+            border-radius: 0;
+            border-left: none;
+            border-right: none;
+          }
+          
+          .prose code {
+            font-size: 0.6875rem;
+            padding: 0.125rem 0.1875rem;
+          }
+        }
+        
+        /* Very small screens */
+        @media (max-width: 480px) {
+          .prose pre {
+            font-size: 0.625rem;
+            padding: 0.375rem;
+            margin: 0.5rem -0.5rem;
+          }
+          
+          .prose code {
+            font-size: 0.625rem;
+          }
         }
       `}</style>
       <ReactMarkdown 
@@ -285,22 +417,44 @@ export default function MarkdownRenderer({ content, className = "" }: MarkdownRe
             </li>
           ),
           table: ({ children, ...props }) => (
-            <div className="overflow-x-auto my-6">
-              <table className="min-w-full border-collapse border border-gray-300" {...props}>
+            <div className="overflow-x-auto my-6 -mx-4 sm:mx-0">
+              <table className="min-w-full border-collapse border border-gray-300 text-sm sm:text-base" {...props}>
                 {children}
               </table>
             </div>
           ),
           th: ({ children, ...props }) => (
-            <th className="border border-gray-300 bg-gray-50 px-4 py-3 text-left font-semibold text-gray-900" {...props}>
+            <th className="border border-gray-300 bg-gray-50 px-2 sm:px-4 py-2 sm:py-3 text-left font-semibold text-gray-900 text-xs sm:text-sm" {...props}>
               {children}
             </th>
           ),
           td: ({ children, ...props }) => (
-            <td className="border border-gray-300 px-4 py-3 text-gray-700" {...props}>
+            <td className="border border-gray-300 px-2 sm:px-4 py-2 sm:py-3 text-gray-700 text-xs sm:text-sm" {...props}>
               {children}
             </td>
           ),
+          pre: ({ children, ...props }) => (
+            <div className="overflow-x-auto -mx-4 sm:mx-0 my-4">
+              <pre className="bg-gray-100 border border-gray-200 rounded-lg p-3 sm:p-4 text-xs sm:text-sm font-mono leading-relaxed overflow-x-auto" {...props}>
+                {children}
+              </pre>
+            </div>
+          ),
+          code: ({ children, className, ...props }) => {
+            const isInline = !className?.includes('language-')
+            if (isInline) {
+              return (
+                <code className="bg-purple-100 text-purple-600 px-1 py-0.5 rounded text-xs sm:text-sm font-mono" {...props}>
+                  {children}
+                </code>
+              )
+            }
+            return (
+              <code className="text-xs sm:text-sm font-mono" {...props}>
+                {children}
+              </code>
+            )
+          },
         }}
       >
         {content}
