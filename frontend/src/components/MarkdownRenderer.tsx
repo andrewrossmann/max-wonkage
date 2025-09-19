@@ -36,18 +36,20 @@ export default function MarkdownRenderer({ content, className = "" }: MarkdownRe
     return selectedImage
   }
 
-  // Simple image validation - DALL-E images should work directly
+  // Enhanced image validation with better DALL-E handling
   const validateImageUrl = (url: string): string => {
     if (!url) {
       console.log('No URL provided, using fallback');
       return getNextFallbackImage('no-url');
     }
     
-    console.log('Using DALL-E generated image:', url);
+    console.log('Validating image URL:', url);
     
-    // DALL-E images should work directly, but keep fallback for edge cases
+    // Check if it's a DALL-E image URL
     if (url.includes('dalle') || url.includes('openai') || url.startsWith('https://oaidalleapiprodscus.blob.core.windows.net')) {
-      return url;
+      // DALL-E images often expire or have auth issues, so we'll use fallback for now
+      console.log('DALL-E image detected, using fallback due to potential auth issues');
+      return getNextFallbackImage('dalle-auth-issue');
     }
     
     // For any other URLs, use fallback
@@ -196,10 +198,25 @@ export default function MarkdownRenderer({ content, className = "" }: MarkdownRe
                       error: e.type,
                       errorEvent: e
                     });
+                    
+                    // Hide the failed image
                     target.style.display = 'none';
+                    
+                    // Show the fallback placeholder
                     const fallbackDiv = target.nextElementSibling as HTMLElement;
                     if (fallbackDiv) {
                       fallbackDiv.style.display = 'inline-block';
+                    }
+                    
+                    // If this was a DALL-E image that failed, try to load a fallback image
+                    if (src && (src.includes('dalle') || src.includes('openai') || src.startsWith('https://oaidalleapiprodscus.blob.core.windows.net'))) {
+                      console.log('DALL-E image failed, attempting to load fallback image');
+                      const fallbackImage = getNextFallbackImage('dalle-fallback');
+                      target.src = fallbackImage;
+                      target.style.display = 'inline-block';
+                      if (fallbackDiv) {
+                        fallbackDiv.style.display = 'none';
+                      }
                     }
                   }}
                   {...props}
