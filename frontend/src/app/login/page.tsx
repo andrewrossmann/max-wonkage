@@ -221,7 +221,7 @@ function LoginContent() {
           </div>
 
           {!confirmationSent && (
-            <div className="text-center">
+            <div className="text-center space-y-2">
               <button
                 type="button"
                 onClick={() => setIsSignUp(!isSignUp)}
@@ -232,6 +232,18 @@ function LoginContent() {
                   : "Don't have an account? Sign up"
                 }
               </button>
+              
+              {!isSignUp && (
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => router.push('/auth/forgot-password')}
+                    className="text-sm text-gray-600 hover:text-yellow-600 transition-colors"
+                  >
+                    Forgot your password?
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </motion.form>

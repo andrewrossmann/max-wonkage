@@ -24,13 +24,13 @@ Set the following URLs in your Supabase dashboard:
 **Redirect URLs:**
 Add both URLs (comma-separated):
 ```
-http://localhost:3000/auth/confirm,https://max-wonkage.vercel.app/auth/confirm
+http://localhost:3000/auth/confirm,https://max-wonkage.vercel.app/auth/confirm,http://localhost:3000/auth/reset-password,https://max-wonkage.vercel.app/auth/reset-password
 ```
 
 **Additional Redirect URLs (if needed):**
 You can also add these for more flexibility:
 ```
-http://localhost:3000/**/auth/confirm,https://max-wonkage.vercel.app/**/auth/confirm
+http://localhost:3000/**/auth/confirm,https://max-wonkage.vercel.app/**/auth/confirm,http://localhost:3000/**/auth/reset-password,https://max-wonkage.vercel.app/**/auth/reset-password
 ```
 
 ### 1.3 Email Templates (Optional)
@@ -100,6 +100,16 @@ The code automatically detects the environment:
 5. App processes confirmation at `/auth/confirm` page
 6. User is redirected to dashboard
 
+### 3.3 Password Reset Flow
+
+1. User clicks "Forgot your password?" on login page
+2. User enters email on `/auth/forgot-password` page
+3. Supabase sends password reset email
+4. Email contains link to: `{detected_url}/auth/reset-password?token=...`
+5. User clicks link and is automatically signed in
+6. User enters new password on `/auth/reset-password` page
+7. Password is updated and user is redirected to dashboard
+
 ## Step 4: Testing
 
 ### 4.1 Test Local Development
@@ -119,6 +129,16 @@ The code automatically detects the environment:
 4. Check your email for confirmation link
 5. Click the link - it should redirect to `https://max-wonkage.vercel.app/auth/confirm`
 6. Verify you're redirected to the dashboard
+
+### 4.3 Test Password Reset
+
+1. Go to `http://localhost:3000/login` (or production URL)
+2. Click "Forgot your password?"
+3. Enter your email address
+4. Check your email for password reset link
+5. Click the link - it should redirect to `{url}/auth/reset-password`
+6. Enter a new password and confirm it
+7. Verify you're redirected to the dashboard
 
 ## Troubleshooting
 
