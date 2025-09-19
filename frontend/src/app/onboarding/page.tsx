@@ -1406,7 +1406,7 @@ function ReviewStep({ data, onComplete, onEditStep, onGeneratePrompt, isEditMode
               <div className="font-medium">{data.timeAvailability.totalWeeks} weeks</div>
             </div>
             <div className="bg-gray-50 p-3 rounded border">
-              <span className="text-gray-600">Sessions/Week:</span>
+              <span className="text-gray-600">Sessions Per Week:</span>
               <div className="font-medium">{data.timeAvailability.sessionsPerWeek}</div>
             </div>
             <div className="bg-gray-50 p-3 rounded border">
