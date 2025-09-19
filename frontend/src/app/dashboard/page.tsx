@@ -43,6 +43,12 @@ function DashboardContent() {
     if (user && session?.access_token && !isLoadingData) {
       console.log('Dashboard: Loading user data for user:', user.id)
       loadUserData()
+    } else if (!user) {
+      // Clear data when user signs out
+      setUserProfile(null)
+      setCurricula([])
+      setDataLoading(false)
+      setIsLoadingData(false)
     }
   }, [user?.id, session?.access_token]) // Depend on user.id and session token
 
@@ -61,7 +67,7 @@ function DashboardContent() {
   }, [openDropdown])
 
   const loadUserData = async () => {
-    if (!user || !session || isLoadingData) return
+    if (!user || !session || !session.access_token || isLoadingData) return
     
     console.log('Dashboard: Starting loadUserData for user:', user.id)
     console.log('Dashboard: Session object:', session)
@@ -82,6 +88,9 @@ function DashboardContent() {
         const profile = await profileResponse.json()
         setUserProfile(profile)
         console.log('Successfully loaded user profile:', profile)
+      } else if (profileResponse.status === 401) {
+        // User is no longer authenticated, don't log as error
+        console.log('User profile fetch returned 401 - user may have signed out')
       } else {
         console.error('Failed to fetch user profile:', profileResponse.status)
       }
@@ -98,6 +107,9 @@ function DashboardContent() {
         const userCurricula = await curriculaResponse.json()
         setCurricula(userCurricula)
         console.log('Successfully loaded curricula:', userCurricula.length, 'items')
+      } else if (curriculaResponse.status === 401) {
+        // User is no longer authenticated, don't log as error
+        console.log('Curricula fetch returned 401 - user may have signed out')
       } else {
         console.error('Failed to fetch curricula:', curriculaResponse.status)
       }
@@ -255,7 +267,7 @@ function DashboardContent() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <Logo showText={true} size={48} />
+          <Logo showText={true} size={48} navigateToHome={true} />
           <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
@@ -272,7 +284,7 @@ function DashboardContent() {
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <Logo showText={true} size={32} />
+            <Logo showText={true} size={32} navigateToHome={true} />
             <div className="flex items-center gap-1 md:gap-4">
               <span className="text-gray-600 text-xs md:text-base hidden md:block">
                 Welcome, {userProfile?.first_name || user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'there'}
@@ -525,7 +537,7 @@ export default function DashboardPage() {
     <Suspense fallback={
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="max-w-md w-full space-y-8 text-center">
-          <Logo showText={true} size={48} />
+          <Logo showText={true} size={48} navigateToHome={true} />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading...</h2>
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mx-auto"></div>
         </div>

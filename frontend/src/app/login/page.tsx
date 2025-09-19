@@ -15,7 +15,7 @@ function LoginContent() {
   const [isSignUp, setIsSignUp] = useState(false)
   const [confirmationSent, setConfirmationSent] = useState(false)
   
-  const { signIn, signUp, resendConfirmation } = useAuth()
+  const { user, signIn, signUp, resendConfirmation, signOut } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -25,6 +25,16 @@ function LoginContent() {
       setIsSignUp(true)
     }
   }, [searchParams])
+
+  // Handle signed-in users - show them their status instead of redirecting
+  const handleSignOut = async () => {
+    await signOut()
+    // Clear form after sign out
+    setEmail('')
+    setPassword('')
+    setFirstName('')
+    setError('')
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -122,6 +132,41 @@ function LoginContent() {
             }
           </p>
         </motion.div>
+
+        {/* Show current login status if user is already signed in */}
+        {user && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-blue-900">
+                  You are currently signed in as:
+                </p>
+                <p className="text-sm text-blue-700 mt-1">
+                  {user.user_metadata?.first_name || user.email?.split('@')[0] || user.email}
+                </p>
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => router.push('/dashboard')}
+                  className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                >
+                  Go to Dashboard
+                </button>
+                <button
+                  onClick={handleSignOut}
+                  className="px-3 py-1 bg-gray-600 text-white text-sm rounded hover:bg-gray-700 transition-colors"
+                >
+                  Sign Out
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         <motion.form
           initial={{ opacity: 0, y: 20 }}

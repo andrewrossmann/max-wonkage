@@ -1,22 +1,30 @@
 import React from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 
 interface LogoProps {
   showText?: boolean;
   size?: number;
   className?: string;
+  navigateToHome?: boolean;
 }
 
-export default function Logo({ showText = true, size = 32, className = "" }: LogoProps) {
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+export default function Logo({ showText = true, size = 32, className = "", navigateToHome = false }: LogoProps) {
+  const router = useRouter();
+  
+  const handleClick = () => {
+    if (navigateToHome) {
+      router.push('/');
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   return (
     <motion.div 
       className={`flex items-center space-x-2 cursor-pointer ${className}`}
-      onClick={scrollToTop}
+      onClick={handleClick}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
     >

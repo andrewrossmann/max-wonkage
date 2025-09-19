@@ -29,7 +29,7 @@ export default function LandingPage() {
   const { scrollY } = useScroll();
   const y = useTransform(scrollY, [0, 300], [0, -50]);
   const router = useRouter();
-  const { user, loading } = useAuth();
+  const { user, loading, signOut } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -39,12 +39,8 @@ export default function LandingPage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Redirect signed-in users to dashboard
-  useEffect(() => {
-    if (!loading && user) {
-      router.push('/dashboard');
-    }
-  }, [user, loading, router]);
+  // Note: We no longer automatically redirect signed-in users to dashboard
+  // This allows them to access the landing page if they want to
 
   // Show loading state while checking authentication
   if (loading) {
@@ -83,23 +79,54 @@ export default function LandingPage() {
               <a href="#how-it-works" className={`${isScrolled ? 'text-gray-800' : 'text-white'} hover:text-yellow-400 transition-colors font-medium`}>How it Works</a>
               <a href="#features" className={`${isScrolled ? 'text-gray-800' : 'text-white'} hover:text-yellow-400 transition-colors font-medium`}>Features</a>
               <a href="mailto:andrewrossmann@gmail.com" className={`${isScrolled ? 'text-gray-800' : 'text-white'} hover:text-yellow-400 transition-colors font-medium`}>Contact</a>
-              <motion.button
-                onClick={() => router.push('/login')}
-                className="px-6 py-2 bg-yellow-400 text-black rounded-lg hover:bg-yellow-300 transition-all duration-200 font-semibold shadow-lg"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                Log In
-              </motion.button>
+              {user && (
+                <span className={`${isScrolled ? 'text-gray-600' : 'text-white'} text-sm`}>
+                  Welcome, {user.user_metadata?.first_name || user.email?.split('@')[0] || 'there'}
+                </span>
+              )}
+              {user ? (
+                <motion.button
+                  onClick={async () => {
+                    await signOut();
+                    // User will be redirected to landing page automatically after sign out
+                  }}
+                  className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-200 font-semibold shadow-lg"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  Sign Out
+                </motion.button>
+              ) : (
+                <motion.button
+                  onClick={() => router.push('/login')}
+                  className="px-6 py-2 bg-yellow-400 text-black rounded-lg hover:bg-yellow-300 transition-all duration-200 font-semibold shadow-lg"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  Log In
+                </motion.button>
+              )}
             </nav>
 
-            {/* Mobile Menu Button */}
-            <button
-              className={`md:hidden p-2 ${isScrolled ? 'text-gray-800' : 'text-white'}`}
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
+            {/* Mobile Menu Button and Sign Out */}
+            <div className="md:hidden flex items-center space-x-2">
+              {user && (
+                <button
+                  onClick={async () => {
+                    await signOut();
+                  }}
+                  className={`px-3 py-1 text-xs rounded ${isScrolled ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-red-500 text-white hover:bg-red-600'} transition-colors`}
+                >
+                  Sign Out
+                </button>
+              )}
+              <button
+                className={`p-2 ${isScrolled ? 'text-gray-800' : 'text-white'}`}
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+              >
+                {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              </button>
+            </div>
           </div>
 
           {/* Mobile Navigation */}
@@ -143,16 +170,28 @@ export default function LandingPage() {
                   </a>
                 </div>
                 
-                {/* Login Button - Full Width */}
-                <button 
-                  onClick={() => {
-                    router.push('/login');
-                    setIsMenuOpen(false);
-                  }}
-                  className="w-full px-6 py-3 bg-yellow-400 text-black rounded-lg hover:bg-yellow-300 transition-all duration-200 font-semibold shadow-lg"
-                >
-                  Log In
-                </button>
+                {/* Login/Sign Out Button - Full Width */}
+                {user ? (
+                  <button 
+                    onClick={async () => {
+                      await signOut();
+                      setIsMenuOpen(false);
+                    }}
+                    className="w-full px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-200 font-semibold shadow-lg"
+                  >
+                    Sign Out
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => {
+                      router.push('/login');
+                      setIsMenuOpen(false);
+                    }}
+                    className="w-full px-6 py-3 bg-yellow-400 text-black rounded-lg hover:bg-yellow-300 transition-all duration-200 font-semibold shadow-lg"
+                  >
+                    Log In
+                  </button>
+                )}
               </div>
             </motion.nav>
           )}
@@ -208,12 +247,18 @@ export default function LandingPage() {
               transition={{ duration: 0.8, delay: 0.4 }}
             >
               <motion.button
-                onClick={() => router.push('/login?signup=true')}
+                onClick={() => {
+                  if (user) {
+                    router.push('/dashboard');
+                  } else {
+                    router.push('/login?signup=true');
+                  }
+                }}
                 className="group px-8 py-4 bg-yellow-500 text-black rounded-xl font-semibold text-lg shadow-2xl hover:shadow-3xl transition-all duration-300 flex items-center space-x-2 backdrop-blur-sm"
                 whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <span>Start Learning</span>
+                <span>{user ? 'Go to Dashboard' : 'Start Learning'}</span>
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </motion.button>
 
