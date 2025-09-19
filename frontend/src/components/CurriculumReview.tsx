@@ -134,7 +134,27 @@ export default function CurriculumReview({
       {/* Header */}
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Review Your Syllabus</h1>
-        <p className="text-gray-600">Please review the generated syllabus and make any adjustments before approving</p>
+        <p className="text-gray-600 mb-4">Please review the generated syllabus and make any adjustments before approving</p>
+        
+        {/* Small convenience buttons */}
+        <div className="flex justify-center space-x-3">
+          <button
+            onClick={handleReviseSyllabus}
+            disabled={isProcessing}
+            className="flex items-center space-x-1 px-3 py-1.5 text-sm bg-gray-100 text-gray-600 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <Edit3 className="w-4 h-4" />
+            <span>Revise</span>
+          </button>
+          <button
+            onClick={handleApprove}
+            disabled={isProcessing}
+            className="flex items-center space-x-1 px-3 py-1.5 text-sm bg-yellow-100 text-yellow-700 rounded-md hover:bg-yellow-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <CheckCircle className="w-4 h-4" />
+            <span>Approve</span>
+          </button>
+        </div>
       </div>
 
       {/* Syllabus Overview */}
