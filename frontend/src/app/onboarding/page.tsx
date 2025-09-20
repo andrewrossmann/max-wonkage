@@ -8,6 +8,20 @@ import Logo from '@/components/Logo'
 import { createCurriculum, getUserCurricula, Curriculum, updateCurriculum } from '@/lib/database'
 import { ChevronLeft, ChevronRight, Clock, BookOpen, Target, CheckCircle, Mic, MicOff, Send, Loader2, User, Edit3 } from 'lucide-react'
 
+// Custom hook for mobile detection to avoid hydration issues
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false)
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent))
+    }
+    checkMobile()
+  }, [])
+  
+  return isMobile
+}
+
 // TypeScript declarations for Speech Recognition API
 declare global {
   interface Window {
@@ -922,6 +936,9 @@ function PersonalBackgroundStep({
 
   const canProceed = fields.some(field => data[field.id] && data[field.id].trim())
 
+  // Check if user is on mobile
+  const isMobile = useIsMobile()
+
   return (
     <div>
       <h2 className="text-3xl font-bold text-gray-900 mb-2">Terrific! Now let's get to know you</h2>
@@ -940,8 +957,9 @@ function PersonalBackgroundStep({
                   onChange={(e) => updateData({ [field.id]: e.target.value })}
                   placeholder={field.placeholder}
                   rows={4}
+                  data-field-id={field.id}
                   className={`w-full px-4 py-2 pr-20 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 resize-none ${
-                    typeof window !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
+                    isMobile 
                       ? 'text-sm placeholder:text-xs' 
                       : ''
                   }`}
@@ -953,10 +971,10 @@ function PersonalBackgroundStep({
                     maxHeight: '200px',
                     wordWrap: 'break-word',
                     whiteSpace: 'pre-wrap',
-                    paddingRight: '60px',
+                    paddingRight: isMobile ? '120px' : '60px',
                     touchAction: 'pan-y'
                   }}
-                  data-mobile-placeholder={typeof window !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)}
+                  data-mobile-placeholder={isMobile}
                   onTouchStart={(e) => {
                     // Ensure the textarea can be scrolled on mobile
                     e.currentTarget.focus()
@@ -986,6 +1004,33 @@ function PersonalBackgroundStep({
                       <Mic className="w-4 h-4" />
                     )}
                   </button>
+                  {/* Mobile submit button */}
+                  {isMobile && (
+                    <button
+                      onClick={() => {
+                        // Focus next field or show completion feedback
+                        const currentIndex = fields.findIndex(f => f.id === field.id)
+                        if (currentIndex < fields.length - 1) {
+                          const nextField = fields[currentIndex + 1]
+                          const nextElement = document.querySelector(`textarea[data-field-id="${nextField.id}"]`) as HTMLTextAreaElement
+                          if (nextElement) {
+                            nextElement.focus()
+                          }
+                        }
+                      }}
+                      disabled={!data[field.id] || !data[field.id].trim()}
+                      className={`p-2 rounded-full transition-colors ${
+                        data[field.id] && data[field.id].trim()
+                          ? 'bg-green-500 text-white hover:bg-green-600'
+                          : 'bg-gray-300 text-gray-500'
+                      }`}
+                      title="Save and continue"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -995,22 +1040,53 @@ function PersonalBackgroundStep({
                 Listening... Speak now
               </p>
             )}
+            {/* Mobile completion feedback */}
+            {isMobile && data[field.id] && data[field.id].trim() && (
+              <p className="text-sm text-green-600 mt-1 flex items-center">
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Saved
+              </p>
+            )}
           </div>
         ))}
       </div>
 
       {/* Submit Button */}
       <div className="flex justify-end mt-8">
-        <button
-          onClick={onNext}
-          disabled={!canProceed}
-          className="flex items-center space-x-2 px-6 py-3 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-600 disabled:bg-gray-300 disabled:text-gray-500 transition-colors"
-        >
-          <span>Continue</span>
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
+        {isMobile && canProceed ? (
+          <div className="w-full">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+              <p className="text-sm text-green-700 flex items-center mb-3">
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                All fields completed! Ready to continue.
+              </p>
+              <button
+                onClick={onNext}
+                className="w-full bg-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-600 transition-colors flex items-center justify-center space-x-2"
+              >
+                <span>Continue to Next Step</span>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={onNext}
+            disabled={!canProceed}
+            className="flex items-center space-x-2 px-6 py-3 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-600 disabled:bg-gray-300 disabled:text-gray-500 transition-colors"
+          >
+            <span>Continue</span>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        )}
       </div>
     </div>
   )
@@ -1130,6 +1206,9 @@ function SubjectSelectionStep({ data, updateData, onNext }: { data: any, updateD
     }, 300)
   }
 
+  // Check if user is on mobile
+  const isMobile = useIsMobile()
+
   return (
     <div>
       <h2 className="text-3xl font-bold text-gray-900 mb-2">Choose Your Subject</h2>
@@ -1140,19 +1219,61 @@ function SubjectSelectionStep({ data, updateData, onNext }: { data: any, updateD
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Subject or Topic
           </label>
-          <input
-            type="text"
-            value={data.topic}
-            onChange={(e) => updateData({ topic: e.target.value })}
-            placeholder="e.g., Python Programming, Spanish, Creative Writing..."
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && data.topic.trim()) {
-                e.preventDefault()
-                onNext()
-              }
-            }}
-          />
+          <div className="relative">
+            <input
+              type="text"
+              value={data.topic}
+              onChange={(e) => updateData({ topic: e.target.value })}
+              placeholder="e.g., Python Programming, Spanish, Creative Writing..."
+              className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 ${
+                isMobile ? 'pr-12' : ''
+              }`}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && data.topic.trim()) {
+                  e.preventDefault()
+                  onNext()
+                }
+              }}
+            />
+            {/* Mobile submit button */}
+            {isMobile && (
+              <button
+                onClick={() => {
+                  if (data.topic.trim()) {
+                    onNext()
+                  }
+                }}
+                disabled={!data.topic || !data.topic.trim()}
+                className={`absolute right-2 top-1/2 transform -translate-y-1/2 p-2 rounded-full transition-colors ${
+                  data.topic && data.topic.trim()
+                    ? 'bg-green-500 text-white hover:bg-green-600'
+                    : 'bg-gray-300 text-gray-500'
+                }`}
+                title="Save and continue"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </button>
+            )}
+          </div>
+          {/* Mobile completion feedback */}
+          {isMobile && data.topic && data.topic.trim() && (
+            <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-sm text-green-700 flex items-center mb-2">
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Subject saved! Tap "Continue" below to proceed.
+              </p>
+              <button
+                onClick={onNext}
+                className="w-full bg-green-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-600 transition-colors"
+              >
+                Continue to Next Step
+              </button>
+            </div>
+          )}
         </div>
         
         <div>
@@ -1210,6 +1331,9 @@ function SkillLevelStep({
     { value: 'advanced', label: 'Advanced', description: 'Experienced, want to master' }
   ]
 
+  // Check if user is on mobile
+  const isMobile = useIsMobile()
+
   return (
     <div>
       <h2 className="text-3xl font-bold text-gray-900 mb-2">Skill Level & Goals</h2>
@@ -1249,13 +1373,14 @@ function SkillLevelStep({
               placeholder="What do you want to achieve? (e.g., Build a web app, Have conversations in Spanish, Write a novel...)"
               rows={4}
               className={`w-full px-4 py-2 pr-20 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 resize-none overflow-y-auto ${
-                typeof window !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
+                isMobile 
                   ? 'text-sm placeholder:text-xs' 
                   : ''
               }`}
               style={{
                 WebkitOverflowScrolling: 'touch',
-                scrollBehavior: 'smooth'
+                scrollBehavior: 'smooth',
+                paddingRight: isMobile ? '120px' : '60px'
               }}
             />
             <div className="absolute right-2 bottom-2 flex space-x-1">
@@ -1284,6 +1409,25 @@ function SkillLevelStep({
                   <Mic className="w-4 h-4" />
                 )}
               </button>
+              {/* Mobile submit button */}
+              {isMobile && (
+                <button
+                  onClick={() => {
+                    // Just show completion feedback, no auto-advance since this is the last field
+                  }}
+                  disabled={!data.goals || !data.goals.trim()}
+                  className={`p-2 rounded-full transition-colors ${
+                    data.goals && data.goals.trim()
+                      ? 'bg-green-500 text-white hover:bg-green-600'
+                      : 'bg-gray-300 text-gray-500'
+                  }`}
+                  title="Save"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </button>
+              )}
             </div>
           </div>
           {isListening && currentField === 'goals' && (
@@ -1292,21 +1436,52 @@ function SkillLevelStep({
               Listening... Speak now
             </p>
           )}
+          {/* Mobile completion feedback */}
+          {isMobile && data.goals && data.goals.trim() && (
+            <p className="text-sm text-green-600 mt-1 flex items-center">
+              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              Saved
+            </p>
+          )}
         </div>
       </div>
 
       {/* Submit Button */}
       <div className="flex justify-end mt-8">
-        <button
-          onClick={onNext}
-          disabled={!data.skillLevel}
-          className="flex items-center space-x-2 px-6 py-3 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-600 disabled:bg-gray-300 disabled:text-gray-500 transition-colors"
-        >
-          <span>Review & Continue</span>
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
+        {isMobile && data.skillLevel ? (
+          <div className="w-full">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+              <p className="text-sm text-green-700 flex items-center mb-3">
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Skill level and goals saved! Ready to continue.
+              </p>
+              <button
+                onClick={onNext}
+                className="w-full bg-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-600 transition-colors flex items-center justify-center space-x-2"
+              >
+                <span>Review & Continue</span>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={onNext}
+            disabled={!data.skillLevel}
+            className="flex items-center space-x-2 px-6 py-3 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-600 disabled:bg-gray-300 disabled:text-gray-500 transition-colors"
+          >
+            <span>Review & Continue</span>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        )}
       </div>
     </div>
   )
@@ -1507,6 +1682,7 @@ function PromptReviewStep({ prompt, onPromptChange, onComplete, onReturnToOrigin
   hasPromptBeenEdited: boolean,
   originalPrompt: string
 }) {
+  const isMobile = useIsMobile()
   return (
     <div>
       <h2 className="text-3xl font-bold text-gray-900 mb-2">Customize Your AI Prompt</h2>
@@ -1548,7 +1724,7 @@ function PromptReviewStep({ prompt, onPromptChange, onComplete, onReturnToOrigin
             value={prompt}
             onChange={(e) => onPromptChange(e.target.value)}
             className={`w-full h-96 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 resize-none font-mono text-sm overflow-y-auto ${
-              typeof window !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
+              isMobile 
                 ? 'placeholder:text-xs' 
                 : ''
             }`}
